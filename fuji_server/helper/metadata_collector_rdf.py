@@ -151,10 +151,14 @@ class MetaDataCollectorRdf(MetaDataCollector):
                 self.logger.info("FsF-F2-01M : Trying to identify namespaces in RDF Graph")
                 graph_namespaces = self.set_namespaces(rdf_response_graph)
                 # self.getNamespacesfromIRIs(graph_text)
-                schema_metadata, dcat_metadata, skos_metadata = {}, {}, {}
+                schema_metadata, dcat_metadata, geodcat_metadata, skos_metadata = {}, {}, {}, {}
                 if rdflib.term.URIRef("http://www.w3.org/ns/dcat#") in graph_namespaces.values():
                     self.logger.info("FsF-F2-01M : RDF Graph seems to contain DCAT metadata elements")
                     dcat_metadata = self.get_dcat_metadata(rdf_response_graph)
+                # Collect GeoDCAT-AP metadata
+                if rdflib.term.URIRef("http://data.europa.eu/930/") in graph_namespaces.values():
+                    self.logger.info("FsF-F2-01M : RDF Graph seems to contain GeoDCAT-AP metadata elements")
+                    geodcat_metadata = self.get_geodcat_metadata(rdf_response_graph)
                 if (
                     rdflib.term.URIRef("http://schema.org/") in graph_namespaces.values()
                     or rdflib.term.URIRef("https://schema.org/") in graph_namespaces.values()
@@ -165,7 +169,7 @@ class MetaDataCollectorRdf(MetaDataCollector):
                     self.logger.info("FsF-F2-01M : RDF Graph seems to contain SKOS/OWL metadata elements")
                     skos_metadata = self.get_ontology_metadata(rdf_response_graph)
                 # merging metadata dicts
-                rdf_metadata = skos_metadata | dcat_metadata | schema_metadata
+                rdf_metadata = skos_metadata | dcat_metadata | geodcat_metadata | schema_metadata
                 # else:
                 if not rdf_metadata:
                     self.logger.info(
@@ -1214,6 +1218,96 @@ class MetaDataCollectorRdf(MetaDataCollector):
                 service_type = graph.value(data_service, DCTERMS.conformsTo)
                 dcat_metadata["metadata_service"].append({"url": str(service_url), "type": str(service_type)})
         return dcat_metadata
+
+    def get_geodcat_metadata(self, graph):
+        """
+        Get the GeoDCAT-AP metadata given RDF graph.
+
+        Parameters
+        ----------
+        graph : RDF.ConjunctiveGraph
+            RDF Conjunctive Graph object
+
+        Returns
+        ------
+        dict
+            A dictionary of GeoDCAT-AP metadata from RDF graph
+
+
+        ### Mandatory props:
+        dct:description	
+        dct:title
+
+        ### Recommended props:
+        dcat:contactPoint
+        dcat:distribution
+        dcat:keyword
+        dct:publisher
+        dct:spatial
+        dct:temporal	
+        dcat:theme
+        """
+        geodcat_metadata = dict()
+        DCT = Namespace("http://purl.org/dc/terms/")
+        DCAT = Namespace("http://www.w3.org/ns/dcat#")
+        GEODCAT = Namespace("http://data.europa.eu/930/")
+        LOCN = Namespace("http://www.w3.org/ns/locn#")
+
+        self.logger.info(
+            "FsF-F2-01M : Trying to get some GeoDCAT properties"
+            )
+
+        datasets = list(graph[: RDF.type : DCAT.Dataset])
+        if datasets:
+            # Spatial coverage
+            spatial_coverages = graph.objects(datasets[0], DCT.spatial)
+            geodcat_metadata['spatial_coverage'] = []
+
+            for spatial in spatial_coverages:
+                spatial_info = {}
+                geometry = None
+                # Use GeoDCAT-AP to get spatial coverage
+                location = graph.value(spatial, LOCN.geometry)
+                if location:
+                    geometry = location
+
+                bbox = graph.value(spatial, DCAT.bbox)
+                if bbox:
+                    geometry = bbox
+
+                if geometry:
+                    spatial_info['geometry'] = str(geometry)
+
+            # Get spatial resolution
+            resolutions_dict = self.get_spatial_resolutions_dict(graph, datasets[0])
+            if resolutions_dict:
+                for resolution_type, value in resolutions_dict.items():
+                    spatial_res = {resolution_type: value}
+                            
+            if spatial_info:
+                geodcat_metadata['spatial_coverage'].append(spatial_info)
+                geodcat_metadata['spatial_resolution'] = spatial_res
+
+
+        print(f"Fetched GEODCAT METATDATA: {geodcat_metadata}")
+        return geodcat_metadata
+    
+    def get_spatial_resolutions_dict(self, graph, dataset):
+        DCAT = Namespace("http://www.w3.org/ns/dcat#") 
+        GEODCAT = Namespace("http://data.europa.eu/930/")
+        # Define the mapping of properties to their respective resolution types
+        resolution_types = {
+            'spatialResolutionInMeters': DCAT.spatialResolutionInMeters,
+            'spatialResolutionAsDistance': GEODCAT.spatialResolutionAsDistance,
+            'spatialResolutionAsScale': GEODCAT.spatialResolutionAsScale,
+            'spatialResolutionAsVerticalDistance': GEODCAT.spatialResolutionAsVerticalDistance,
+            'spatialResolutionAsAngularDistance': GEODCAT.spatialResolutionAsAngularDistance
+        }
+
+        # Create a dictionary with resolution types as keys and their values if they exist
+        spatial_resolutions = {key: graph.value(dataset, prop) for key, prop in resolution_types.items() if graph.value(dataset, prop) is not None}
+
+        return spatial_resolutions
 
     def get_content_type(self):
         """Get the content type.

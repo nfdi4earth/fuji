@@ -62,6 +62,13 @@ class Mapper(Enum):
         "language": {"label": "Language", "sameAs": "http://purl.org/dc/terms/language"},
         "license_path": {"label": "License Path", "sameAs": None},
         "metadata_service": {"label": "Metadata Service", "sameAs": None},
+        ### GEODCAT extension
+        "spatial_coverage": {"label": "Spatial Coverage", "sameAs": "http://purl.org/dc/terms/spatial"},
+        "spatialResolutionInMeters": {"label": "Spatial Resolution In Meters", "sameAs": "https://www.w3.org/ns/dcat#spatialResolutionInMeters"},
+        "spatialResolutionAsDistance": {"label": "Spatial Resolution In Meters", "sameAs": "https://data.europa.eu/930/spatialResolutionAsDistance"},
+        "spatialResolutionAsScale": {"label": "Spatial Resolution In Meters", "sameAs": "https://data.europa.eu/930/spatialResolutionAsScale"},
+        "spatialResolutionAsVerticalDistance": {"label": "Spatial Resolution In Meters", "sameAs": "https://data.europa.eu/930/spatialResolutionAsVerticalDistance"},
+        "spatialResolutionAsAngularDistance": {"label": "Spatial Resolution In Meters", "sameAs": "https://data.europa.eu/930/spatialResolutionAsAngularDistance"},
     }
 
     # core metadata elements (FsF-F2-01M)

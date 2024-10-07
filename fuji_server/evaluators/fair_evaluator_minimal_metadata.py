@@ -39,7 +39,7 @@ class FAIREvaluatorCoreMetadata(FAIREvaluator):
 
         self.metric_test_map = {  # overall map
             "testMetadataCommonMethodsAvailable": ["FsF-F2-01M-1"],
-            "testCoreDescriptiveMetadataAvailable": ["FsF-F2-01M-3", "FRSM-04-F2-2", "FRSM-04-F2-CESSDA-2"],
+            "testCoreDescriptiveMetadataAvailable": ["FsF-F2-01M-3", "FsF-F2-01M-4", "FRSM-04-F2-2", "FRSM-04-F2-CESSDA-2"],
             "testCoreCitationMetadataAvailable": ["FsF-F2-01M-2"],
             "testMinimumMetadataAvailable": ["FRSM-04-F2-1", "FRSM-04-F2-CESSDA-1"],
             "testMetadataFormatMachineReadable": ["FRSM-04-F2-3"],
@@ -95,18 +95,12 @@ class FAIREvaluatorCoreMetadata(FAIREvaluator):
     def testCoreDescriptiveMetadataAvailable(self):
         agnostic_test_name = "testCoreDescriptiveMetadataAvailable"
         test_status = False
-        test_defined = False
-        for test_id in self.metric_test_map[agnostic_test_name]:
-            if self.isTestDefined(test_id):
-                test_defined = True
-                break
-        test_requirements = None
-        # TODO implement
-        if test_id.startswith("FRSM"):
-            self.logger.warning(
-                f"{self.metric_identifier} : Test for descriptive metadata is not implemented for FRSM."
-            )
-        if test_defined:
+
+        defined_tests = [test_id for test_id in self.metric_test_map[agnostic_test_name]
+                         if self.isTestDefined(test_id) and not test_id.startswith("FRSM")]
+
+        for test_id in defined_tests:
+            print(f"Current_test: {test_id}")
             if self.metric_tests[test_id].metric_test_requirements:
                 test_requirements = self.metric_tests[test_id].metric_test_requirements[0]
             if test_requirements:
@@ -115,39 +109,47 @@ class FAIREvaluatorCoreMetadata(FAIREvaluator):
                     if isinstance(test_requirements.get("required"), list):
                         test_required = test_requirements.get("required")
                     elif test_requirements.get("required").get("name"):
-                        test_required = test_requirements.get("required").get("name")
+                        test_required = test_requirements.get(
+                            "required").get("name")
                     if not isinstance(test_required, list):
                         test_required = [test_required]
                     self.logger.info(
                         "{} : Will exclusively consider community specific metadata properties which are specified in metrics -: {}".format(
-                            self.metric_identifier, test_requirements.get("required")
+                            self.metric_identifier, test_requirements.get(
+                                "required")
                         )
                     )
                     self.required_metadata_properties = []
                     for rq_prop in test_required:
                         if rq_prop in Mapper.REFERENCE_METADATA_LIST.value:
                             self.required_metadata_properties.append(rq_prop)
+
             test_score = self.getTestConfigScore(test_id)
+            print(f"cur_test: {test_id}: mf: {set(self.metadata_found)} - rm: {set(self.required_metadata_properties)}")
             if set(self.metadata_found) & set(self.required_metadata_properties) == set(
                 self.required_metadata_properties
-            ):
+            ):  
+                print(f"cur_test: {test_id} Successful!")
                 self.logger.log(
                     self.fuji.LOG_SUCCESS,
                     self.metric_identifier
                     + f" : Found required core descriptive metadata elements -: {self.required_metadata_properties}",
                 )
-                self.maturity = self.metric_tests.get(self.metric_identifier + "-3").metric_test_maturity_config
-                self.score.earned = self.total_score
-                self.setEvaluationCriteriumScore(self.metric_identifier + "-3", test_score, "pass")
+                self.maturity = self.metric_tests.get(test_id).metric_test_maturity_config
+                self.score.earned += test_score
+        
+                self.setEvaluationCriteriumScore(test_id, test_score, "pass")
                 test_status = True
             else:
-                core_missing = list(set(self.required_metadata_properties) - set(self.metadata_found))
+                core_missing = list(
+                    set(self.required_metadata_properties) - set(self.metadata_found))
                 self.logger.warning(
                     self.metric_identifier
                     + f" : Not all required core descriptive metadata elements exist, missing -: {core_missing!s}"
                 )
-        return test_status
 
+        return test_status
+    
     def testCoreCitationMetadataAvailable(self):
         agnostic_test_name = "testCoreCitationMetadataAvailable"
         test_status = False

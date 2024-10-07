@@ -427,7 +427,7 @@ class Preprocessor:
         ld_path = cls.data_dir / "linked_vocab.yaml"
         vocabs = []
         if isDebugMode:
-            with open(ld_path) as f:
+            with open(ld_path, encoding="utf-8") as f:
                 cls.linked_vocabs = yaml.safe_load(f)
         else:
             # 1. retrieve records from https://lov.linkeddata.es/dataset/lov/api

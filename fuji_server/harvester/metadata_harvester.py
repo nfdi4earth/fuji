@@ -89,6 +89,7 @@ class MetadataHarvester:
         self.repeat_pid_check = False
         self.related_resources = []
         self.metadata_merged = {}
+        self.geospatial_properties = {}
         self.typed_links = []
         self.STANDARD_PROTOCOLS = Preprocessor.get_standard_protocols()
         # elements which need to be there
@@ -156,6 +157,14 @@ class MetadataHarvester:
                         + str(metadata_standard)
                     )
             if isinstance(metadict, dict) and allow_merge is True:
+                ## Add spatial properties to the harvester object (required for the fair check)
+                self.geospatial_properties['spatial_coverage'] = metadict.get('spatial_coverage', None)
+
+                if metadict.get('spatial_resolution'):
+                    res_key = list(metadict.get('spatial_resolution').keys())[0]
+                    res = metadict['spatial_resolution'].get(res_key, None)
+                    self.geospatial_properties[res_key] = res
+                    metadict[res_key] = res
                 # self.metadata_sources.append((method_source, 'negotiated'))
                 for r in metadict.keys():
                     if r in self.reference_elements:
