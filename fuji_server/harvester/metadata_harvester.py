@@ -161,11 +161,11 @@ class MetadataHarvester:
                     )
             if isinstance(metadict, dict) and allow_merge is True:
                 ## Add spatial properties to the harvester object (required for the fair check)
-                self.geospatial_properties['spatial_coverage'] = metadict.get('spatial_coverage', None)
+                self.geospatial_properties['coverage_spatial'] = metadict.get('coverage_spatial', None)
 
-                if metadict.get('spatial_resolution'):
-                    res_key = list(metadict.get('spatial_resolution').keys())[0]
-                    res = metadict['spatial_resolution'].get(res_key, None)
+                if metadict.get('resolution_spatial'):
+                    res_key = list(metadict.get('resolution_spatial').keys())[0]
+                    res = metadict['resolution_spatial'].get(res_key, None)
                     self.geospatial_properties[res_key] = res
                     metadict[res_key] = res
                 # self.metadata_sources.append((method_source, 'negotiated'))
