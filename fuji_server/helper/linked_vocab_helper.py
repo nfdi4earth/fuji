@@ -1,14 +1,12 @@
 # SPDX-FileCopyrightText: 2020 PANGAEA (https://www.pangaea.de/)
 #
 # SPDX-License-Identifier: MIT
-
+import json
 import logging
 import re
 from pathlib import Path
 
 from tldextract import extract
-
-import yaml
 
 logger = logging.getLogger(__name__)
 
@@ -23,17 +21,27 @@ class LinkedVocabHelper:
     def __init__(self, linked_vocab_index={}):
         self.linked_vocab_index = linked_vocab_index
         self.linked_vocab_dict = {}
+        self.namespaces = []
         self.ignore_prefixes = ["orcid", "doi", "isni", "ror", "wikipedia", "github", "arxiv"]
         # prefixes used for identifiers only so we ignore these for terms
-        self.ignore_domain = ["orcid.org", "doi.org", "ror.org", "zenodo.org", "isni.org", "github.com", "arxiv.org"]
+        self.ignore_domain = [
+            "orcid.org",
+            "doi.org",
+            "ror.org",
+            "zenodo.org",
+            "isni.org",
+            "github.com",
+            "arxiv.org",
+            "fairsharing.org",
+        ]
 
     def set_linked_vocab_dict(self):
         logger.info("Setting up the vocab dict.........................")
         # a new implementation based on bioportal etc..
 
-        for ont_reg_file in self.linked_vocabs_dir.glob("*.yaml"):
+        for ont_reg_file in self.linked_vocabs_dir.glob("*.json"):
             with open(ont_reg_file, encoding="utf-8") as reg_file:
-                reg_ontologies = yaml.safe_load(reg_file)
+                reg_ontologies = json.load(reg_file)
                 self.linked_vocab_dict.update(reg_ontologies)
 
     def split_iri(self, iri):
@@ -61,6 +69,7 @@ class LinkedVocabHelper:
         uri_regex = reg_entry.get("pattern")
         uri_format = reg_entry.get("uri_format")
         namespace = uri_format.split("$1")[0]
+        self.namespaces.append(namespace)
         subjects = reg_entry.get("subjects")
         title = reg_entry.get("name")
         uriparts = self.split_iri(uri_format)

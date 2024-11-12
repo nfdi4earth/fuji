@@ -44,9 +44,11 @@ class Mapper(Enum):
         "publication_date": {"label": "Publication Date", "sameAs": "http://purl.org/dc/terms/date"},
         "summary": {"label": "Summary", "sameAs": "http://purl.org/dc/terms/abstract"},
         "keywords": {"label": "Keywords", "sameAs": "http://purl.org/dc/terms/subject"},
+        # object_content_identifier (list) subproperties: 'url', 'type', 'size'
         "object_content_identifier": {"label": "Content (Data) Identifier", "sameAs": "https://schema.org/contentUrl"},
         "access_level": {"label": "Access Level", "sameAs": "http://purl.org/dc/terms/accessRights"},
         "access_free": {"label": "Free Access", "sameAs": "https://schema.org/isAccessibleForFree"},
+        # related_resources (list) subproperties: 'relation_type', 'related_resource'
         "related_resources": {"label": "Related resources", "sameAs": "http://purl.org/dc/terms/related"},
         "provenance_general": {"label": "Provenance", "sameAs": "http://purl.org/dc/terms/provenance"},
         "measured_variable": {"label": "Measured Variable", "sameAs": "https://schema.org/variableMeasured"},
@@ -60,15 +62,16 @@ class Mapper(Enum):
         "right_holder": {"label": "License", "sameAs": "http://purl.org/dc/terms/rightsHolder"},
         "object_size": {"label": "Object Size", "sameAs": "http://purl.org/dc/terms/extent"},
         "language": {"label": "Language", "sameAs": "http://purl.org/dc/terms/language"},
+        # required for Github etc. software FAIR assessment
         "license_path": {"label": "License Path", "sameAs": None},
         "metadata_service": {"label": "Metadata Service", "sameAs": None},
-        ### GEODCAT extension
-        "spatial_coverage": {"label": "Spatial Coverage", "sameAs": "http://purl.org/dc/terms/spatial"},
-        "spatialResolutionInMeters": {"label": "Spatial Resolution In Meters", "sameAs": "https://www.w3.org/ns/dcat#spatialResolutionInMeters"},
-        "spatialResolutionAsDistance": {"label": "Spatial Resolution In Meters", "sameAs": "https://data.europa.eu/930/spatialResolutionAsDistance"},
-        "spatialResolutionAsScale": {"label": "Spatial Resolution In Meters", "sameAs": "https://data.europa.eu/930/spatialResolutionAsScale"},
-        "spatialResolutionAsVerticalDistance": {"label": "Spatial Resolution In Meters", "sameAs": "https://data.europa.eu/930/spatialResolutionAsVerticalDistance"},
-        "spatialResolutionAsAngularDistance": {"label": "Spatial Resolution In Meters", "sameAs": "https://data.europa.eu/930/spatialResolutionAsAngularDistance"},
+        "coverage_spatial": {"label": "Geographical Coverage", "sameAs": "http://purl.org/dc/terms/Location"},
+        "coverage_temporal": {"label": "Temporal Coverage", "sameAs": None},
+        "resolution_spatial_in_meters": {"label": "Spatial Resolution In Meters", "sameAs": "https://www.w3.org/ns/dcat#spatialResolutionInMeters"},
+        "resolution_spatial_as_distance": {"label": "Spatial Resolution In Meters", "sameAs": "https://data.europa.eu/930/spatialResolutionAsDistance"},
+        "resolution_spatial_as_scale": {"label": "Spatial Resolution As Scale", "sameAs": "https://data.europa.eu/930/spatialResolutionAsScale"},
+        "resolution_spatial_as_vertical_distance": {"label": "Spatial Resolution As Vertical Distance", "sameAs": "https://data.europa.eu/930/spatialResolutionAsVerticalDistance"},
+        "resolution_spatial_as_angular_distance": {"label": "Spatial Resolution As Angular Distance", "sameAs": "https://data.europa.eu/930/spatialResolutionAsAngularDistance"},
     }
 
     # core metadata elements (FsF-F2-01M)
@@ -184,6 +187,8 @@ class Mapper(Enum):
             "isRequiredBy",
         ],
         "language": "language",
+        "coverage_spatial": ["coverage", "Location", "spatial"],
+        "coverage_temporal": ["coverage", "PeriodOfTime", "Period", "temporal"],
     }
 
     # https://ogp.me/
@@ -260,7 +265,9 @@ class Mapper(Enum):
         "submitted_date: dates[?dateType == 'Submitted'].date,"
         "object_content_identifier:  {url: contentUrl} , "
         "access_level: rightsList[*].rightsUri || rightsList[*].rights, "
-        "language: language }"
+        "language: language,"
+        "coverage_spatial: geoLocations[*].{coordinates: geoLocationBox.*[] || geoLocationPoint.*[] || geoLocationPolygons[*].polygonPoints[].*[],name: geoLocationPlace }"
+        "coverage_temporal: {dates: dates[?dateType == 'Collected'].date, name: dates[?dateType == 'Collected'].dateInformation}}"
     )
     #'related_resources: relatedIdentifiers[*].[relatedIdentifier,relationType]}'
 
@@ -376,6 +383,21 @@ class Mapper(Enum):
         "license": {"path": ["./{*}rightsList/{*}rights", "./{*}rightsList/{*}rights@@rightsURI"]},
         "access_level": {"path": ["./{*}rightsList/{*}rights", "./{*}rightsList/{*}rights@@rightsURI"]},
         "language": {"path": "./{*}language"},
+        "coverage_spatial_coordinates": {
+            "path": [
+                "./{*}geoLocations/{*}geoLocation/{*}geoLocationPoint",
+                "./{*}geoLocations/{*}geoLocation/{*}geoLocationBox",
+                "./{*}geoLocations/{*}geoLocation/{*}geoLocationPolygon",
+            ]
+        },
+        "coverage_spatial_name": {
+            "path": [
+                "./{*}geoLocations/{*}geoLocationPlace",
+                "./{*}geoLocations/{*}geoLocationPlace",
+                "./{*}geoLocations/{*}geoLocationPlace",
+            ]
+        },
+        "coverage_temporal": {"path": "./{*}dates/{*}date[@dateType='Collected']"},
     }
 
     XML_MAPPING_METS = {
@@ -432,14 +454,28 @@ class Mapper(Enum):
         },
         "object_content_identifier_url": {
             "path": [
-                "./{*}dataset/{*}dataTable/{*}physical/{*}distribution/{*}online/{*}url",
+                "./{*}dataset//{*}physical/{*}distribution/{*}online/{*}url",
                 ".//{*}dataset/{*}distribution/{*}online/{*}url",
             ]
         },
         "object_content_identifier_size": {
-            "path": "./{*}dataset/{*}dataTable/{*}physical/{*}distribution/{*}online/{*}size"
+            "path": ["./{*}dataset//{*}physical/{*}distribution/{*}online/{*}size", "./{*}dataset//{*}physical/{*}size"]
         },
         "language": {"path": "./{*}dataset/{*}language"},
+        "coverage_spatial_coordinates": {
+            "path": "./{*}dataset/{*}coverage/{*}geographicCoverage/{*}boundingCoordinates"
+        },
+        "coverage_spatial_name": {"path": "./{*}dataset/{*}coverage/{*}geographicCoverage/{*}geographicDescription"},
+        "coverage_temporal": {
+            "path": [
+                "./{*}dataset/{*}coverage/{*}temporalCoverage/{*}singleDateTime/",
+                "./{*}dataset/{*}coverage/{*}temporalCoverage/{*}rangeOfDates",
+            ]
+        },
+        "related_resource_isReferencedBy": {"path": ["./{*}dataset/{*}usageCitation@@id"]},
+        "related_resource_references": {
+            "path": ["./{*}dataset/{*}literatureCited@@id", "./{*}dataset/{*}referencePublication@@id"]
+        },
     }
     # CLARIN CMDI
     XML_MAPPING_CMD = {
@@ -560,6 +596,9 @@ class Mapper(Enum):
         "object_content_identifier_type": {"path": ".//{*}fileDscr/{*}fileTxt/{*}fileType"},
         "measured_variable": {"path": "./{*}dataDscr/{*}var@@name"},
         "language": {"path": ["./{*}codeBook@@lang", "./{*}stdyDscr/{*}citation/{*}titlStmt/{*}titl@@xml:lang"]},
+        # https://ddialliance.org/Specification/DDI-Codebook/2.1/DTD/Documentation/version2-1-all.html#2.0
+        # spatial_coverage_name: geogCover
+        # spatial_coverage_coordinates:geoBndBox
     }
     XML_MAPPING_DIF = {
         "object_identifier": {"path": "./{*}Dataset_Citation/{*}Persistent_Identifier"},
@@ -664,24 +703,6 @@ class Mapper(Enum):
                 },
             ],
         },
-        """
-        "object_content_identifier_url": {
-            "path": [
-                "./{*}distributionInfo/{*}MD_Distribution//{*}CI_OnlineResource/{*}linkage/{*}URL",
-                #"./{*}distributionInfo/{*}MD_Distribution//{*}CI_OnlineResource[{*}protocol]/{*}linkage/{*}URL",
-                "./{*}distributionInfo/{*}MD_Distribution/{*}transferOptions/{*}MD_DigitalTransferOptions/{*}onLine/{*}CI_OnlineResource/{*}linkage/{*}URL"
-            ]
-        },
-        "object_content_identifier_type": {
-            "path": [
-                "./{*}distributionInfo/{*}MD_Distribution//{*}CI_OnlineResource/{*}applicationProfile/{*}Anchor",
-                "./{*}distributionInfo/{*}MD_Distribution/{*}transferOptions/{*}MD_DigitalTransferOptions/{*}onLine/{*}CI_OnlineResource/{*}applicationProfile/{*}Anchor"
-            ]
-        },
-        "object_content_identifier_service": {
-            "path": "./{*}distributionInfo/{*}MD_Distribution//{*}CI_OnlineResource/{*}protocol/{*}Anchor@@xlink:href"
-        },
-        """
         "measured_variable": {
             "path": [
                 "./{*}contentInfo/{*}MD_CoverageDescription/{*}attributeDescription/{*}RecordType",
@@ -718,4 +739,17 @@ class Mapper(Enum):
             ]
         },
         "language": {"path": "./{*}language/{*}LanguageCode@@codeListValue"},
+        "coverage_spatial_coordinates": {
+            "path": [
+                "./{*}identificationInfo//{*}geographicElement/{*}EX_GeographicBoundingBox",
+                "./{*}identificationInfo//{*}geographicElement/{*}gmd:EX_BoundingPolygon",
+            ]
+        },
+        "coverage_spatial_name": {
+            "path": [
+                "./{*}identificationInfo//{*}geographicElement/{*}geographicIdentifier/{*}MD_Identifier/{*}code",
+                "./{*}identificationInfo//{*}geographicElement/{*}geographicIdentifier/{*}MD_Identifier/{*}code",
+            ]
+        },
+        # "./{*}identificationInfo//{*}geographicElement//{*}posList"]
     }

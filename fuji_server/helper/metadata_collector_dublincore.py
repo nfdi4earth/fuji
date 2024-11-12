@@ -38,6 +38,32 @@ class MetaDataCollectorDublinCore(MetaDataCollector):
         """
         super().__init__(logger=loggerinst, mapping=mapping, sourcemetadata=sourcemetadata)
 
+    def parse_coverage(self, coverage, type):
+        type = type.split(".")[-1]  # DCT.Period
+        cov = {"type": None, "value": [], "name": None}
+        coordinate_keys = ["east", "north", "northlimit", "eastlimit", "southlimit", "westlimit"]
+        period_keys = ["start", "end"]
+        try:
+            cpts = coverage.split(";")
+            for cpt in cpts:
+                cvi = cpt.split("=")
+                if len(cvi) == 2:
+                    if type in ["Point", "Box", "Location"]:
+                        cov["type"] = "spatial"
+                        if cvi[0].strip() == "name":
+                            cov["name"] = cvi[1]
+                        if cvi[0].strip() in coordinate_keys:
+                            cov["value"].append(cvi[1])
+                    elif type in ["Period", "PeriodOfTime"]:
+                        cov["type"] = "temporal"
+                        if cvi[0].strip() == "name":
+                            cov["name"] = cvi[1]
+                        if cvi[0].strip() in period_keys:
+                            cov["value"].append(cvi[1])
+        except Exception as e:
+            print("ERROR: ", e)
+        return cov
+
     def parse_metadata(self):
         """Parse the Dublin Core metadata from the data
 
@@ -52,6 +78,8 @@ class MetaDataCollectorDublinCore(MetaDataCollector):
         dc_core_base_props = [
             "contributor",
             "coverage",
+            "spatial",
+            "temporal",
             "creator",
             "date",
             "issued",
@@ -83,7 +111,6 @@ class MetaDataCollectorDublinCore(MetaDataCollector):
                     meta_dc_soupresult = metasoup.findAll(
                         "meta", attrs={"name": re.compile(r"(DC|dc|DCTERMS|dcterms)\.([A-Za-z]+)")}
                     )
-
                     if len(meta_dc_soupresult) <= 0:
                         meta_dc_soupresult = metasoup.findAll(
                             "meta", attrs={"name": re.compile(r"(" + "|".join(dc_core_base_props) + ")")}
@@ -96,10 +123,13 @@ class MetaDataCollectorDublinCore(MetaDataCollector):
                             dc_t = None
                             if len(dc_name_parts) == 3:
                                 dc_t = dc_name_parts[2]
-                            meta_dc_matches.append([dc_name_parts[1], dc_t, meta_tag.get("content")])
+                            meta_dc_matches.append(
+                                [dc_name_parts[1], dc_t, meta_tag.get("content"), meta_tag.get("scheme")]
+                            )
                     # meta_dc_matches = re.findall(exp, self.source_metadata)
                 except Exception as e:
-                    self.logger.exception(f"Parsing error, failed to extract DublinCore -: {e}")
+                    self.logger.info(f"FsF-I3-01M : Parsing error, failed to extract Dublin Core -: {e}")
+
                 if len(meta_dc_matches) > 0:
                     self.namespaces.append("http://purl.org/dc/elements/1.1/")
                     # source = self.getEnumSourceNames().DUBLINCORE_EMBEDDED
@@ -113,72 +143,95 @@ class MetaDataCollectorDublinCore(MetaDataCollector):
                         else:
                             dcterms.append(str(dcitems).lower())
                     for dc_meta in meta_dc_matches:
-                        # dc_meta --> ('', 'DC', 'creator', ' ', 'Hillenbrand, Claus-Dieter')
-                        # key
-                        k = str(dc_meta[0])  # 2
-                        # type
-                        t = dc_meta[1]  # 3
-                        # value
-                        v = dc_meta[2]  # 5
+                        try:
+                            # dc_meta --> ('', 'DC', 'creator', ' ', 'Hillenbrand, Claus-Dieter')
+                            # key
+                            k = str(dc_meta[0])  # 2
+                            # type
+                            t = dc_meta[1]  # 3
+                            # value
+                            v = dc_meta[2]  # 5
+                            # ccheme
+                            # s = dc_meta[3]
+                            if k.lower() == "date":
+                                if t == "dateAccepted":
+                                    dc_core_metadata["accepted_date"] = v
+                                elif t == "dateSubmitted":
+                                    dc_core_metadata["submitted_date"] = v
 
-                        if k.lower() == "date":
-                            if t == "dateAccepted":
-                                dc_core_metadata["accepted_date"] = v
-                            elif t == "dateSubmitted":
-                                dc_core_metadata["submitted_date"] = v
-
-                        # if self.isDebug:
-                        #   self.logger.info('FsF-F2-01M: DublinCore metadata element, %s = %s , ' % (k, v)
-                        if k.lower() in dcterms:
-                            # self.logger.info('FsF-F2-01M: DublinCore metadata element, %s = %s , ' % (k, v))
-                            try:
-                                elem = next(
-                                    key
-                                    for (key, value) in Mapper.DC_MAPPING.value.items()
-                                    if k.lower() in str(value).lower()
-                                )  # fuji ref fields
-                            except Exception:
-                                # nothing found so just continue
-                                pass
-                            if elem == "related_resources":
-                                # dc_core_metadata['related_resources'] = []
-                                # tuple of type and relation
-                                # Mapping see: https://www.w3.org/TR/prov-dc/
-                                # qualifiers, subproperties (t):
-                                # https://www.dublincore.org/specifications/dublin-core/dcmes-qualifiers/
-                                # https://www.dublincore.org/specifications/dublin-core/dcq-html/
-                                if k in ["source", "references"]:
-                                    t = "wasDerivedFrom"
-                                elif k == "relation":
-                                    if t in [None, ""]:
-                                        t = "isRelatedTo"
-                                else:
-                                    t = k
-                                v = [{"related_resource": v, "relation_type": t}]  # must be a list of dict
-                                # v = dict(related_resource=v, relation_type=t)
-                            if v:
-                                if elem in dc_core_metadata:
-                                    if isinstance(dc_core_metadata[elem], list):
-                                        if isinstance(v, list):
-                                            dc_core_metadata[elem].extend(v)
+                            # if self.isDebug:
+                            #   self.logger.info('FsF-F2-01M: DublinCore metadata element, %s = %s , ' % (k, v)
+                            if k.lower() in dcterms:
+                                # self.logger.info('FsF-F2-01M: DublinCore metadata element, %s = %s , ' % (k, v))
+                                try:
+                                    elem = next(
+                                        key
+                                        for (key, value) in Mapper.DC_MAPPING.value.items()
+                                        if k.lower() in str(value).lower()
+                                    )  # fuji ref fields
+                                except Exception:
+                                    # nothing found so just continue
+                                    pass
+                                if elem in ["coverage_spatial", "coverage_temporal"]:
+                                    try:
+                                        coverage_info = self.parse_coverage(v, elem.split("_")[-1])
+                                        v = {
+                                            "name": coverage_info.get("name"),
+                                            "reference": coverage_info.get("reference"),
+                                        }
+                                        if coverage_info.get("type") == "spatial":
+                                            v["coordinates"] = coverage_info.get("value")
+                                            elem = "coverage_spatial"
                                         else:
-                                            dc_core_metadata[elem].append(v)
+                                            elem = "coverage_temporal"
+                                            v["dates"] = coverage_info.get("value")
+                                        v = [v]
+                                    except Exception as e:
+                                        self.logger.info(
+                                            f"FsF-I3-01M : Parsing error, failed to extract Dublin Core coverage info -: {e}"
+                                        )
+                                        pass
+                                if elem == "related_resources":
+                                    # dc_core_metadata['related_resources'] = []
+                                    # tuple of type and relation
+                                    # Mapping see: https://www.w3.org/TR/prov-dc/
+                                    # qualifiers, subproperties (t):
+                                    # https://www.dublincore.org/specifications/dublin-core/dcmes-qualifiers/
+                                    # https://www.dublincore.org/specifications/dublin-core/dcq-html/
+                                    if k in ["source", "references"]:
+                                        t = "wasDerivedFrom"
+                                    elif k == "relation":
+                                        if t in [None, ""]:
+                                            t = "isRelatedTo"
                                     else:
-                                        temp_list = []
-                                        temp_list.append(dc_core_metadata[elem])
-                                        temp_list.append(v)
-                                        dc_core_metadata[elem] = temp_list
-                                else:
-                                    dc_core_metadata[elem] = v
+                                        t = k
+                                    v = [{"related_resource": v, "relation_type": t}]  # must be a list of dict
+                                    # v = dict(related_resource=v, relation_type=t)
+                                if v:
+                                    if elem in dc_core_metadata:
+                                        if isinstance(dc_core_metadata[elem], list):
+                                            if isinstance(v, list):
+                                                dc_core_metadata[elem].extend(v)
+                                            else:
+                                                dc_core_metadata[elem].append(v)
+                                        else:
+                                            temp_list = []
+                                            temp_list.append(dc_core_metadata[elem])
+                                            temp_list.append(v)
+                                            dc_core_metadata[elem] = temp_list
+                                    else:
+                                        dc_core_metadata[elem] = v
+                        except Exception as e:
+                            self.logger.info(f"FsF-I3-01M : Parsing error, failed to parse Dublin Core property -: {e}")
                     if dc_core_metadata.get("related_resources"):
                         count = len([d for d in dc_core_metadata.get("related_resources") if d.get("related_resource")])
                         self.logger.info(
-                            "FsF-I3-01M : number of related resource(s) extracted from DublinCore -: {} from {}".format(
+                            "FsF-I3-01M : number of related resource(s) extracted from Dublin Core -: {} from {}".format(
                                 count, source.name
                             )
                         )
                     else:
-                        self.logger.info("FsF-I3-01M : No related resource(s) found in DublinCore metadata")
+                        self.logger.info("FsF-I3-01M : No related resource(s) found in Dublin Core metadata")
                     # process string-based file format
                     # https://www.dublincore.org/specifications/dublin-core/dcmi-dcsv/
                     """if dc_core_metadata.get('file_format_only'):
@@ -188,5 +241,5 @@ class MetaDataCollectorDublinCore(MetaDataCollector):
                             )  # assume first value as media type #TODO use regex to extract mimetype
                             dc_core_metadata['file_format_only'] = format_str"""
             except Exception as e:
-                self.logger.exception(f"Failed to extract DublinCore - {e}")
+                self.logger.exception(f"Failed to extract Dublin Core - {e}")
         return source, dc_core_metadata

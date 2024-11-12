@@ -312,7 +312,6 @@ class MetaDataCollectorXML(MetaDataCollector):
         res = dict()
         # make sure related_resources are not listed in the mapping dict instead related_resource_Reltype has to be used
         res["related_resources"] = []
-
         for prop in mapping:
             res[prop] = []
             if isinstance(mapping.get(prop).get("path"), list):
@@ -402,4 +401,43 @@ class MetaDataCollectorXML(MetaDataCollector):
             res.pop("object_content_identifier_size", None)
             res.pop("object_content_identifier_url", None)
             res.pop("object_content_identifier_service", None)
+        if res.get("coverage_temporal_dates") or res.get("coverage_temporal_names"):
+            res["coverage_temporal"] = []
+            if not isinstance(res["coverage_temporal_dates"], list):
+                res["coverage_temporal_dates"] = [res["coverage_temporal_dates"]]
+            ci = 0
+            for temporal_info in res["coverage_temporal_dates"] or res.get("coverage_temporal_names"):
+                temporal_dates = None
+                temporal_name = None
+            if res.get("coverage_temporal_dates"):
+                if ci < len(res["coverage_temporal_dates"]):
+                    temporal_dates = res["coverage_temporal_dates"][ci]
+            if res.get("coverage_temporal_name"):
+                if ci < len(res["coverage_temporal_name"]):
+                    temporal_name = res["coverage_temporal_name"][ci]
+            res["coverage_temporal"].append({"dates": temporal_dates, "name": temporal_name})
+            ci += 1
+        res.pop("coverage_temporal_dates", None)
+        res.pop("coverage_temporal_name", None)
+        if res.get("coverage_spatial_coordinates") or res.get("coverage_spatial_names"):
+            res["coverage_spatial"] = []
+            if not isinstance(res["coverage_spatial_coordinates"], list):
+                res["coverage_spatial_coordinates"] = [res["coverage_spatial_coordinates"]]
+            ci = 0
+            for spatial_info in res["coverage_spatial_coordinates"] or res.get("coverage_spatial_names"):
+                spatial_coordinates = None
+                spatial_name = None
+                if res.get("coverage_spatial_coordinates"):
+                    if ci < len(res["coverage_spatial_coordinates"]):
+                        spatial_coordinates = res["coverage_spatial_coordinates"][ci]
+                if res.get("coverage_spatial_name"):
+                    if ci < len(res["coverage_spatial_name"]):
+                        spatial_name = res["coverage_spatial_name"][ci]
+                res["coverage_spatial"].append(
+                    {"coordinates": str(spatial_coordinates).split(" "), "name": spatial_name}
+                )
+                ci += 1
+            res.pop("coverage_spatial_coordinates", None)
+            res.pop("coverage_spatial_name", None)
+
         return res

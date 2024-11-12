@@ -79,7 +79,7 @@ class Preprocessor:
                     for ext in mime_data.get("extensions"):
                         # if '.' + ext not in mimetypes.types_map:
                         mimetypes.add_type(mime_type, "." + ext, strict=True)
-            print(len(mimetypes.types_map))
+            print("MIME TYPES: ", len(mimetypes.types_map))
         except Exception:
             cls.logger.warning("Loading additional mime types failed, will continue with standard set")
 
@@ -414,6 +414,7 @@ class Preprocessor:
     def retrieve_linked_vocab_index(cls):
         lov_helper = LinkedVocabHelper()
         lov_helper.set_linked_vocab_index()
+        cls.linked_vocabs = list(set(lov_helper.namespaces))
         cls.linked_vocab_index = lov_helper.linked_vocab_index
 
     @classmethod
@@ -550,9 +551,9 @@ class Preprocessor:
 
     @classmethod
     def getLinkedVocabs(cls):
-        if not cls.linked_vocabs:
-            # cls.retrieve_linkedvocabs(cls.LOV_API, cls.LOD_CLOUDNET, cls.BIOPORTAL_API, cls.BIOPORTAL_KEY, True)
-            cls.retrieve_linkedvocabs(cls.LOV_API, cls.LOD_CLOUDNET, True)
+        # if not cls.linked_vocabs:
+        # cls.retrieve_linkedvocabs(cls.LOV_API, cls.LOD_CLOUDNET, cls.BIOPORTAL_API, cls.BIOPORTAL_KEY, True)
+        # cls.retrieve_linkedvocabs(cls.LOV_API, cls.LOD_CLOUDNET, True)
         return cls.linked_vocabs
 
     @classmethod
