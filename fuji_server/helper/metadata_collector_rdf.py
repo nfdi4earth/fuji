@@ -19,6 +19,7 @@ from rdflib.namespace import (
     SDO,  # schema.org
 )
 import shapely.wkt
+from shapely import to_wkb, to_wkt, to_geojson
 
 from fuji_server.helper.metadata_collector import MetaDataCollector, MetadataFormats, MetadataSources
 from fuji_server.helper.metadata_mapper import Mapper
@@ -1190,11 +1191,15 @@ class MetaDataCollectorRdf(MetaDataCollector):
         dict
             a dict containing coordinates, named places
         """
-        res = { "spatial_text" : spatial_text, "wkt_okay" : False }
+        res = { "wkt_source" : spatial_text, "wkt_okay" : False }
         if spatial_text:   # TODO: use shapely or similar to parse WKT
             try:
                 wkt_instance = shapely.wkt.loads(spatial_text)
                 res["wkt_okay"] = True
+                res["wkt_type"] = wkt_instance.geom_type
+                res["wkt_normalized"] = to_wkt(wkt_instance.normalize())
+                res["geojson_normalized"] = to_geojson(wkt_instance.normalize())
+                res["wkb_normalized"] = to_wkb(wkt_instance.normalize())
             except Exception as e:
                 print(f"parse_dcat_spatial: Failed to parse spatial text: {spatial_text} - {str(e)}")
         else:

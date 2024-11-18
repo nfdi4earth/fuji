@@ -10,6 +10,8 @@
 !/fuji_server/data/google_search_dois.txt
 !/fuji_server/data/google_search_urls.txt
 
+fuji_response.json
+
 # test files
 *.npy
 
