@@ -26,6 +26,7 @@ from fuji_server.helper.metadata_mapper import Mapper
 from fuji_server.helper.preprocessor import Preprocessor
 from fuji_server.helper.request_helper import AcceptTypes, RequestHelper
 
+from .geodcatap_location_validator import LocationFormat, GeoDCAT_AP_Location_Validator
 
 class MetaDataCollectorRdf(MetaDataCollector):
     """
@@ -1064,6 +1065,7 @@ class MetaDataCollectorRdf(MetaDataCollector):
         LOCN = Namespace("http://www.w3.org/ns/locn#")
         dcat_root_type = "Dataset"
         datasets = []
+        gdval = GeoDCAT_AP_Location_Validator(self.logger)
         main_entity_id, main_entity_type, main_entity_namespace = self.get_main_entity(graph)
         if main_entity_id:
             if dcat_root_type == "Catalog":
@@ -1177,34 +1179,20 @@ class MetaDataCollectorRdf(MetaDataCollector):
                     or graph.value(spatial, DCAT.bbox)
                     or graph.value(spatial, DCAT.centroid)
                 )
-                spatial_coordinates = self.parse_dcat_spatial(spatial_coordinate_data)
+                spatial_coordinates = spatial_coordinate_data
+                is_validated, format, parsed_coordinates_wkt = gdval.validate(spatial_coordinate_data)
+                if is_validated:
+                    print(f"Validated coordinate data: format={str(format)}, parsed_coordinates_wkt={parsed_coordinates_wkt}")
+                    spatial_coordinates = parsed_coordinates_wkt
+                else:
+                    print(f"Failed to validate coordinate data: {spatial_coordinate_data}")
+
+
                 # spatial_coordinates = spatial_coordinate_data
                 # TODO: finalize parse_dcat_spatial and replace above with: spatial_coordinates = parse_dcat_spatial(spatial_coordinate_data)
                 dcat_metadata["coverage_spatial"].append({"name": spatial_name, "coordinates": spatial_coordinates})
         return dcat_metadata
 
-    def parse_dcat_spatial(self, spatial_text):
-        """Parse the spatial info provided in DCAT e.g as WKT.
-
-        Returns
-        ------
-        dict
-            a dict containing coordinates, named places
-        """
-        res = { "wkt_source" : spatial_text, "wkt_okay" : False }
-        if spatial_text:   # TODO: use shapely or similar to parse WKT
-            try:
-                wkt_instance = shapely.wkt.loads(spatial_text)
-                res["wkt_okay"] = True
-                res["wkt_type"] = wkt_instance.geom_type
-                res["wkt_normalized"] = to_wkt(wkt_instance.normalize())
-                res["geojson_normalized"] = to_geojson(wkt_instance.normalize())
-                res["wkb_normalized"] = to_wkb(wkt_instance.normalize())
-            except Exception as e:
-                print(f"parse_dcat_spatial: Failed to parse spatial text: {spatial_text} - {str(e)}")
-        else:
-            print(f"parse_dcat_spatial: No spatial text provided")
-        return res
 
 
     def get_geodcat_metadata(self, graph):
