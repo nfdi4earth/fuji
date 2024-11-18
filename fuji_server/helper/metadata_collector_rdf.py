@@ -18,6 +18,7 @@ from rdflib.namespace import (
     RDF,
     SDO,  # schema.org
 )
+import shapely.wkt
 
 from fuji_server.helper.metadata_collector import MetaDataCollector, MetadataFormats, MetadataSources
 from fuji_server.helper.metadata_mapper import Mapper
@@ -1191,24 +1192,7 @@ class MetaDataCollectorRdf(MetaDataCollector):
         """
         res = {}
         if spatial_text:   # TODO: use shapely or similar to parse WKT
-            spatial_text = str(spatial_text)
-            if "POINT" in spatial_text:
-                res["type"] = "Point"
-                res["coordinates"] = [float(spatial_text.split(" ")[1]), float(spatial_text.split(" ")[2])]
-            elif "POLYGON" in spatial_text:
-                res["type"] = "Polygon"
-                res["coordinates"] = []
-                for coord in spatial_text.split("((")[1].split(")")[0].split(","):
-                    res["coordinates"].append([float(coord.split(" ")[0]), float(coord.split(" ")[1])])
-            elif "LINESTRING" in spatial_text:
-                res["type"] = "LineString"
-                res["coordinates"] = []
-                for coord in spatial_text.split("(")[1].split(")")[0].split(","):
-                    res["coordinates"].append([float(coord.split(" ")[0]), float(coord.split(" ")[1])])
-            else:
-                res["type"] = "Unknown"
-                res["coordinates"] = spatial_text
-            print(f"parse_dcat_spatial: Parsed spatial text {spatial_text} to: {str(res)}")
+
         else:
             print(f"parse_dcat_spatial: No spatial text provided")
         return res

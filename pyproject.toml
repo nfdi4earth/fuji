@@ -4,8 +4,8 @@ requires = ["hatchling"]
 
 [project]
 authors = [
-  {name = "Robert Huber", email = "rhuber@marum.de"},
-  {name = "Anusuriya Devaraju", email = "anusuriya.devaraju@googlemail.com"}
+  { name = "Robert Huber", email = "rhuber@marum.de" },
+  { name = "Anusuriya Devaraju", email = "anusuriya.devaraju@googlemail.com" },
 ]
 classifiers = [
   "Development Status :: 5 - Production/Stable",
@@ -13,7 +13,7 @@ classifiers = [
   "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3 :: Only",
   "Programming Language :: Python :: 3.11",
-  "Topic :: Scientific/Engineering :: Information Analysis"
+  "Topic :: Scientific/Engineering :: Information Analysis",
 ]
 dependencies = [
   # dependencies with major version on zero are defined with
@@ -41,7 +41,8 @@ dependencies = [
   "tika~=2.6.0",
   "tldextract~=5.0",
   "urlextract~=1.8",
-  "pygithub~=2.1"
+  "pygithub~=2.1",
+  "shapely~=2.0.6",
 ]
 description = "FUJI (FAIRsFAIR Data Objects Assessment Service), A service to evaluate FAIR data objects based on FAIRsFAIR Metrics"
 keywords = [
@@ -54,24 +55,17 @@ keywords = [
   "Research Data",
   "FAIR data",
   "Metadata harvesting",
-  "FAIR4RS"
+  "FAIR4RS",
 ]
 license = "MIT"
 name = "fuji"
 readme = "README.md"
-requires-python = "~=3.11"  # at the moment only Python 3.11 is supported
+requires-python = "~=3.11" # at the moment only Python 3.11 is supported
 version = "3.4.0"
 
 [project.optional-dependencies]
-docs = [
-  "myst-parser~=4.0",
-  "sphinx~=8.0",
-  "sphinx-rtd-theme~=2.0"
-]
-report = [
-  "bokeh~=3.2",
-  "jupyter~=1.0"
-]
+docs = ["myst-parser~=4.0", "sphinx~=8.0", "sphinx-rtd-theme~=2.0"]
+report = ["bokeh~=3.2", "jupyter~=1.0"]
 
 [project.urls]
 Homepage = "https://www.f-uji.net"
@@ -89,34 +83,22 @@ omit = ["tests/*"]
 parallel = true
 
 [tool.hatch.build]
-include = [
-  "docs",
-  "fuji_server",
-  "AUTHORS",
-  "LICENSE",
-  "README.md"
-]
+include = ["docs", "fuji_server", "AUTHORS", "LICENSE", "README.md"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["fuji_server"]
 
 [tool.hatch.envs.default]
-dependencies = [
-  "pre-commit"
-]
-post-install-commands = [
-  "pre-commit install"
-]
+dependencies = ["pre-commit"]
+post-install-commands = ["pre-commit install"]
 
 [tool.hatch.envs.default.scripts]
 lint = "pre-commit run --all-files --color=always {args}"
 
 [tool.hatch.envs.hatch-test]
 # Ref: https://hatch.pypa.io/latest/config/internal/testing/
-extra-dependencies = [
-  "pytest-recording~=0.13"
-]
-randomize = true  # run tests in random order
+extra-dependencies = ["pytest-recording~=0.13"]
+randomize = true                                # run tests in random order
 
 [tool.hatch.envs.hatch-test.scripts]
 cov-combine = """
@@ -136,13 +118,13 @@ filterwarnings = [
   "ignore:'cgi' is deprecated and slated for removal in Python 3.13:DeprecationWarning",
   # warnings from tika
   "ignore:pkg_resources is deprecated as an API:DeprecationWarning",
-  "ignore:Deprecated call to `pkg_resources.declare_namespace:DeprecationWarning"
+  "ignore:Deprecated call to `pkg_resources.declare_namespace:DeprecationWarning",
 ]
 markers = [
-  "manual",  # tests which should be triggered manual only
-  "noci",  # tests which should not run on the CI
-  "regression",  # tests which run a fuji as a whole
-  "smoke"  # tests which run very fast
+  "manual",     # tests which should be triggered manual only
+  "noci",       # tests which should not run on the CI
+  "regression", # tests which run a fuji as a whole
+  "smoke",      # tests which run very fast
 ]
 testpaths = "tests"
 
@@ -153,13 +135,13 @@ src = ["fuji_server"]
 
 [tool.ruff.lint]
 extend-select = [
-  "I",  # isort
+  "I",   # isort
   "UP",  # pyupgrade
-  "RUF"  # ruff
+  "RUF", # ruff
 ]
 ignore = [
-  "E722",  # bare-except
-  "RUF012"  # mutable-class-default
+  "E722",   # bare-except
+  "RUF012", # mutable-class-default
 ]
 
 [tool.ruff.lint.isort]
@@ -169,10 +151,10 @@ known-first-party = ["fuji_server", "tests"]
 # Note: ruff does not understand, that the logger, which gets passed through multiple inheritance is actually
 # a logger instance. It would not apply f-strings to logging messages. But let's ignore UP031 and UP032 for now.
 "fuji_server/evaluators/*.py" = [
-  "UP031",  # printf-string-formatting
-  "UP032"  # f-string
+  "UP031", # printf-string-formatting
+  "UP032", # f-string
 ]
 "fuji_server/helper/*.py" = [
-  "UP031",  # printf-string-formatting
-  "UP032"  # f-string
+  "UP031", # printf-string-formatting
+  "UP032", # f-string
 ]
