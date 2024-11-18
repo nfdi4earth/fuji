@@ -1042,6 +1042,7 @@ class MetaDataCollectorRdf(MetaDataCollector):
                     schema_metadata["metadata_service"].append({"url": str(service_url), "type": str(service_type)})
         return schema_metadata
 
+
     def get_dcat_metadata(self, graph):
         """Get the Data Catalog (DCAT) metadata given RDF graph.
 
@@ -1174,11 +1175,12 @@ class MetaDataCollectorRdf(MetaDataCollector):
                     or graph.value(spatial, DCAT.bbox)
                     or graph.value(spatial, DCAT.centroid)
                 )
-                spatial_coordinates = spatial_coordinate_data
+                spatial_coordinates = self.parse_dcat_spatial(spatial_coordinate_data)
+                # spatial_coordinates = spatial_coordinate_data
                 # TODO: finalize parse_dcat_spatial and replace above with: spatial_coordinates = parse_dcat_spatial(spatial_coordinate_data)
                 dcat_metadata["coverage_spatial"].append({"name": spatial_name, "coordinates": spatial_coordinates})
         return dcat_metadata
-    
+
     def parse_dcat_spatial(self, spatial_text):
         """Parse the spatial info provided in DCAT e.g as WKT.
 
@@ -1187,8 +1189,31 @@ class MetaDataCollectorRdf(MetaDataCollector):
         dict
             a dict containing coordinates, named places
         """
+        res = {}
+        if spatial_text:   # TODO: use shapely or similar to parse WKT
+            spatial_text = str(spatial_text)
+            if "POINT" in spatial_text:
+                res["type"] = "Point"
+                res["coordinates"] = [float(spatial_text.split(" ")[1]), float(spatial_text.split(" ")[2])]
+            elif "POLYGON" in spatial_text:
+                res["type"] = "Polygon"
+                res["coordinates"] = []
+                for coord in spatial_text.split("((")[1].split(")")[0].split(","):
+                    res["coordinates"].append([float(coord.split(" ")[0]), float(coord.split(" ")[1])])
+            elif "LINESTRING" in spatial_text:
+                res["type"] = "LineString"
+                res["coordinates"] = []
+                for coord in spatial_text.split("(")[1].split(")")[0].split(","):
+                    res["coordinates"].append([float(coord.split(" ")[0]), float(coord.split(" ")[1])])
+            else:
+                res["type"] = "Unknown"
+                res["coordinates"] = spatial_text
+            print(f"parse_dcat_spatial: Parsed spatial text {spatial_text} to: {str(res)}")
+        else:
+            print(f"parse_dcat_spatial: No spatial text provided")
+        return res
 
-        return True
+
     def get_geodcat_metadata(self, graph):
         """
         Get the GeoDCAT-AP metadata given RDF graph.
@@ -1205,7 +1230,7 @@ class MetaDataCollectorRdf(MetaDataCollector):
 
 
         ### Mandatory props:
-        dct:description	
+        dct:description
         dct:title
 
         ### Recommended props:
@@ -1214,7 +1239,7 @@ class MetaDataCollectorRdf(MetaDataCollector):
         dcat:keyword
         dct:publisher
         dct:spatial
-        dct:temporal	
+        dct:temporal
         dcat:theme
         """
         geodcat_metadata = dict()
@@ -1253,7 +1278,7 @@ class MetaDataCollectorRdf(MetaDataCollector):
             if resolutions_dict:
                 for resolution_type, value in resolutions_dict.items():
                     spatial_res = {resolution_type: value}
-                            
+
             if spatial_info:
                 geodcat_metadata['coverage_spatial'].append(spatial_info)
                 geodcat_metadata['resolution_spatial'] = spatial_res
@@ -1261,9 +1286,9 @@ class MetaDataCollectorRdf(MetaDataCollector):
 
         print(f"Fetched GEODCAT METATDATA: {geodcat_metadata}")
         return geodcat_metadata
-    
+
     def get_spatial_resolutions_dict(self, graph, dataset):
-        DCAT = Namespace("http://www.w3.org/ns/dcat#") 
+        DCAT = Namespace("http://www.w3.org/ns/dcat#")
         GEODCAT = Namespace("http://data.europa.eu/930/")
         # Define the mapping of properties to their respective resolution types
         resolution_types = {
