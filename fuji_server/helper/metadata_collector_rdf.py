@@ -1190,9 +1190,13 @@ class MetaDataCollectorRdf(MetaDataCollector):
         dict
             a dict containing coordinates, named places
         """
-        res = {}
+        res = { "spatial_text" : spatial_text, "wkt_okay" : False }
         if spatial_text:   # TODO: use shapely or similar to parse WKT
-
+            try:
+                wkt_instance = shapely.wkt.loads(spatial_text)
+                res["wkt_okay"] = True
+            except Exception as e:
+                print(f"parse_dcat_spatial: Failed to parse spatial text: {spatial_text} - {str(e)}")
         else:
             print(f"parse_dcat_spatial: No spatial text provided")
         return res
