@@ -23,3 +23,17 @@ def test_validate_valid_wkt():
     for wkt in valid_wkt_strings:
         is_valid, _ = gdval.is_valid_wkt(wkt)
         assert is_valid
+
+
+def test_validate_invalid_wkt():
+
+    wkt_invalid = "hello world"
+
+    logger = logging.getLogger(__name__)
+
+    invalid_wkt_strings = [wkt_invalid]
+
+    gdval = GeoDCAT_AP_Location_Validator(logger)
+    for wkt in invalid_wkt_strings:
+        is_valid, _ = gdval.is_valid_wkt(wkt)
+        assert not is_valid
