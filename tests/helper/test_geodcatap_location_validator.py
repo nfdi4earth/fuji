@@ -5,6 +5,13 @@
 from fuji_server.helper.geodcatap_location_validator import GeoDCAT_AP_Location_Validator
 import logging
 
+
+def test_instance():
+    logger = logging.getLogger(__name__)
+    gdval = GeoDCAT_AP_Location_Validator(logger)
+    assert gdval
+
+
 def test_validate_valid_wkt():
 
     wkt_point = 'POINT (30 10)'
