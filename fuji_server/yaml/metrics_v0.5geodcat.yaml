@@ -439,6 +439,24 @@ metrics:
     - comment: same as above but relations have to be machine readable/actionable
     metric_test_score: 1
     metric_test_maturity: 3
+  - metric_test_identifier: FsF-I3-01M-3
+    metric_test_name: Category of spatial data service is defined
+    metric_test_requirements:
+    - comment: specific metric on the category of geospatial data service
+    metric_test_score: 0
+    metric_test_maturity: 2
+  - metric_test_identifier: FsF-I3-01M-4
+    metric_test_name: Type of spatial data service is defined
+    metric_test_requirements:
+    - comment: specific metric on the type of geospatial data service
+    metric_test_score: 0
+    metric_test_maturity: 2
+  - metric_test_identifier: FsF-I3-01M-5
+    metric_test_name: Protocol of spatial data service is defined
+    metric_test_requirements:
+    - comment: specific metric on the protocol of geospatial data service
+    metric_test_score: 0
+    metric_test_maturity: 2
   created_by: FAIRsFAIR
   date_created: 2020-07-08
   date_updated: 2020-12-03
@@ -486,6 +504,10 @@ metrics:
     metric_test_name: Data content matches measured variables or observation types specified in metadata
     metric_test_score: 1
     metric_test_maturity: 3
+  - metric_test_identifier: FsF-R1-01MD-5
+    metric_test_name: I am only a test
+    metric_test_score: 0
+    metric_test_maturity: 999
   created_by: FAIRsFAIR
   date_created: 2020-07-08
   date_updated: 2020-07-08

@@ -99,6 +99,8 @@ async def assess_by_id(body):
         license_file_result = ft.check_license_file()
         # print('F-UJI checks: related')
         related_resources_result = ft.check_relatedresources()
+        print("F-UJI checks: geospatial")
+        geospatial_result = ft.check_geospatial()
         # print('F-UJI checks: searchable')
         check_searchable_result = ft.check_searchable()
         # print('F-UJI checks: data content')
@@ -159,6 +161,8 @@ async def assess_by_id(body):
             results.append(semantic_vocab_result)
         if related_resources_result:
             results.append(related_resources_result)
+        if geospatial_result:
+            results.append(geospatial_result)
         if data_identifier_included_result:
             results.append(data_identifier_included_result)
         if metadata_identifier_included_result:

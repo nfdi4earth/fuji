@@ -32,7 +32,11 @@ from fuji_server.evaluators.fair_evaluator_persistent_identifier_data import FAI
 from fuji_server.evaluators.fair_evaluator_persistent_identifier_metadata import (
     FAIREvaluatorPersistentIdentifierMetadata,
 )
-from fuji_server.evaluators.fair_evaluator_related_resources import FAIREvaluatorRelatedResources
+from fuji_server.evaluators.fair_evaluator_related_resources import (
+    FAIREvaluatorRelatedResources,
+)
+
+from fuji_server.evaluators.fair_evaluator_geospatial import FAIREvaluatorGeospatial
 from fuji_server.evaluators.fair_evaluator_requirements import FAIREvaluatorRequirements
 from fuji_server.evaluators.fair_evaluator_searchable import FAIREvaluatorSearchable
 from fuji_server.evaluators.fair_evaluator_semantic_vocabulary import FAIREvaluatorSemanticVocabulary
@@ -518,6 +522,10 @@ class FAIRCheck:
     def check_relatedresources(self):
         related_check = FAIREvaluatorRelatedResources(self)
         return related_check.getResult()
+
+    def check_geospatial(self):
+        geospatial_check = FAIREvaluatorGeospatial(self)
+        return geospatial_check.getResult()
 
     def check_searchable(self):
         searchable_check = FAIREvaluatorSearchable(self)
