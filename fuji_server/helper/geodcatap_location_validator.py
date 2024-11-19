@@ -278,6 +278,7 @@ class GeoDCAT_AP_Location_Validator:
         input_converted : str | None
             input as WKT format, if the parsing was successful, otherwise None
         """
+        TODO: implement this, see https://gis.stackexchange.com/questions/444097/reading-gml-features-with-shapely-in-python
         try:
             geom = shapely.geometry.shape(input)
             return True, self.normalize_shapely_object_to_string(geom)
