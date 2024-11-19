@@ -162,11 +162,11 @@ class MetaDataCollectorRdf(MetaDataCollector):
                 # self.getNamespacesfromIRIs(graph_text)
                 schema_metadata, dcat_metadata, geodcat_metadata, skos_metadata = {}, {}, {}, {}
                 if rdflib.term.URIRef("http://www.w3.org/ns/dcat#") in graph_namespaces.values():
-                    self.logger.info("FsF-F2-01M : RDF Graph seems to contain DCAT metadata elements")
+                    print("FsF-F2-01M : RDF Graph seems to contain DCAT metadata elements")
                     dcat_metadata = self.get_dcat_metadata(rdf_response_graph)
                 # Collect GeoDCAT-AP metadata
                 if rdflib.term.URIRef("http://data.europa.eu/930/") in graph_namespaces.values():
-                    self.logger.info("FsF-F2-01M : RDF Graph seems to contain GeoDCAT-AP metadata elements")
+                    print("FsF-F2-01M : RDF Graph seems to contain GeoDCAT-AP metadata elements")
                     geodcat_metadata = self.get_geodcat_metadata(rdf_response_graph)
                 if (
                     rdflib.term.URIRef("http://schema.org/") in graph_namespaces.values()
@@ -1069,7 +1069,7 @@ class MetaDataCollectorRdf(MetaDataCollector):
                 )
                 datasets = list(graph.objects(main_entity_id, DCAT.Dataset))
                 if len(datasets) > 0:
-                    self.logger.info(
+                    print(
                         "FsF-F2-01M : Found at least one DCAT Dataset enclosed in the DCAT Catalog, will take the first one for the analysis"
                     )
                     dcat_root_type = "Dataset"
@@ -1095,7 +1095,7 @@ class MetaDataCollectorRdf(MetaDataCollector):
                     or graph.value(dist, DCAT.downloadURL)
                     or graph.value(dist, DCAT.accessService)
                 ):
-                    self.logger.info(
+                    print(
                         "FsF-F2-01M : Trying to retrieve DCAT distributions from remote location -:" + str(dist)
                     )
                     try:
@@ -1253,11 +1253,29 @@ class MetaDataCollectorRdf(MetaDataCollector):
             if resolutions_dict:
                 for resolution_type, value in resolutions_dict.items():
                     spatial_res = {resolution_type: value}
-                            
+
+            # TODO: Bug, spatial_info is not defined if loop does not run through at least once            
             if spatial_info:
                 geodcat_metadata['coverage_spatial'].append(spatial_info)
                 geodcat_metadata['resolution_spatial'] = spatial_res
+            
+            # Temporal coverage
+            temporal_coverages = graph.objects(datasets[0], DCT.temporal)
+            geodcat_metadata['coverage_temporal'] = []
+            for temporal in temporal_coverages:
+                print(temporal)
+                startDate = graph.value(temporal, DCAT.startDate)
+                endDate = graph.value(temporal, DCAT.endDate)
 
+                temporal_info = {}
+                temporal_info['startDate'] = graph.value(temporal, DCAT.startDate)
+                temporal_info['endDate'] = graph.value(temporal, DCAT.endDate)
+
+                if temporal_info:
+                    geodcat_metadata['coverage_temporal'].append(temporal_info)
+            
+            # Temporal resolution
+            geodcat_metadata['resolution_temporal'] = graph.value(datasets[0], DCAT.temporal_resolution)
 
         print(f"Fetched GEODCAT METATDATA: {geodcat_metadata}")
         return geodcat_metadata

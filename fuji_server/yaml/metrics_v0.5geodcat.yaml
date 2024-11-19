@@ -138,6 +138,8 @@ metrics:
         name:
         - coverage_spatial
         - resolution_spatial_as_angular_distance
+        - coverage_temporal
+        - resolution_temporal 
   created_by: FAIRsFAIR
   date_created: 2020-07-08
   date_updated: 2022-05-30
