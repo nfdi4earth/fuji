@@ -27,6 +27,9 @@ class FAIREvaluatorRelatedResources(FAIREvaluator):
         self.metric_test_map = {  # overall map
             "testRelatedResourcesAvailable": ["FsF-I3-01M-1"],
             "testRelatedResourcesMachineReadable": ["FsF-I3-01M-2", "FRSM-12-I2-1"],
+            "testRelatedResourcesGeospatialServiceCategory": ["FsF-I3-01M-3"],
+            "testRelatedResourcesGeospatialServiceType": ["FsF-I3-01M-4"],
+            "testRelatedResourcesGeospatialServiceProtocol": ["FsF-I3-01M-5"],
         }
         self.is_actionable = False
 
@@ -80,8 +83,54 @@ class FAIREvaluatorRelatedResources(FAIREvaluator):
                         test_status = True
             if test_status:
                 self.score.earned = self.total_score
-                self.setEvaluationCriteriumScore(self.metric_identifier + "-2", test_score, "pass")
-                self.maturity = self.getTestConfigMaturity(self.metric_identifier + "-2")
+                self.setEvaluationCriteriumScore(
+                    self.metric_identifier + "-2", test_score, "pass"
+                )
+                self.maturity = self.getTestConfigMaturity(
+                    self.metric_identifier + "-2"
+                )
+        return test_status
+
+    def testRelatedResourcesGeospatialServiceCategory(self):
+        agnostic_test_name = "testRelatedResourcesGeospatialServiceCategory"
+        test_status = False
+        test_defined = False
+        for test_id in self.metric_test_map[agnostic_test_name]:
+            if self.isTestDefined(test_id):
+                test_defined = True
+                break
+        if test_defined:
+            test_score = self.getTestConfigScore(test_id)
+            # TODO implement
+
+        return test_status
+
+    def testRelatedResourcesGeospatialServiceType(self):
+        agnostic_test_name = "testRelatedResourcesGeospatialServiceType"
+        test_status = False
+        test_defined = False
+        for test_id in self.metric_test_map[agnostic_test_name]:
+            if self.isTestDefined(test_id):
+                test_defined = True
+                break
+        if test_defined:
+            test_score = self.getTestConfigScore(test_id)
+            # TODO implement
+
+        return test_status
+
+    def testRelatedResourcesGeospatialServiceProtocol(self):
+        agnostic_test_name = "testRelatedResourcesGeospatialServiceProtocol"
+        test_status = False
+        test_defined = False
+        for test_id in self.metric_test_map[agnostic_test_name]:
+            if self.isTestDefined(test_id):
+                test_defined = True
+                break
+        if test_defined:
+            test_score = self.getTestConfigScore(test_id)
+            # TODO implement
+
         return test_status
 
     def evaluate(self):
@@ -95,6 +144,11 @@ class FAIREvaluatorRelatedResources(FAIREvaluator):
         if self.testRelatedResourcesAvailable():
             related_status = "pass"
             self.testRelatedResourcesMachineReadable()
+
+            self.testRelatedResourcesGeospatialServiceType()
+            self.testRelatedResourcesGeospatialServiceProtocol()
+            self.testRelatedResourcesAsGeoService()
+
         self.result.metric_tests = self.metric_tests
         self.result.test_status = related_status
         self.result.maturity = self.maturity
