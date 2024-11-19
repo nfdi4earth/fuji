@@ -27,11 +27,12 @@ def test_validate_valid_wkt():
 
 def test_validate_invalid_wkt():
 
-    wkt_invalid = "hello world"
+    wkt_invalid1 = "hello world"
+    wkt_invalid2 = 'POINT'
 
     logger = logging.getLogger(__name__)
 
-    invalid_wkt_strings = [wkt_invalid]
+    invalid_wkt_strings = [wkt_invalid1, wkt_invalid2]
 
     gdval = GeoDCAT_AP_Location_Validator(logger)
     for wkt in invalid_wkt_strings:
