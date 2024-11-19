@@ -145,9 +145,9 @@ class FAIREvaluatorRelatedResources(FAIREvaluator):
             related_status = "pass"
             self.testRelatedResourcesMachineReadable()
 
+            self.testRelatedResourcesGeospatialServiceCategory()
             self.testRelatedResourcesGeospatialServiceType()
             self.testRelatedResourcesGeospatialServiceProtocol()
-            self.testRelatedResourcesAsGeoService()
 
         self.result.metric_tests = self.metric_tests
         self.result.test_status = related_status
