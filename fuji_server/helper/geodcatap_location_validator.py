@@ -217,7 +217,7 @@ class GeoDCAT_AP_Location_Validator:
             input as WKT format, if the parsing was successful, otherwise None
         """
         try:
-            geom = shapely.wkt.loads(input)
+            geom = from_wkt(input)
             return True, self.normalize_shapely_object_to_string(geom)
         except Exception as e:
             self.logger.debug(f"Check for WKT negative for input: '{input}' with error: {str(e)}")
@@ -278,9 +278,10 @@ class GeoDCAT_AP_Location_Validator:
         input_converted : str | None
             input as WKT format, if the parsing was successful, otherwise None
         """
-        TODO: implement this, see https://gis.stackexchange.com/questions/444097/reading-gml-features-with-shapely-in-python
         try:
-            geom = shapely.geometry.shape(input)
+            import pygml
+            geom_xml_tree = pygml.parse(input)
+            geom = shapely.geometry.shape(geom_xml_tree.__geo_interface__)
             return True, self.normalize_shapely_object_to_string(geom)
         except Exception as e:
             self.logger.debug(f"Check for GML negative for input: '{input}' with error: {str(e)}")
