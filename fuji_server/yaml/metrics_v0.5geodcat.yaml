@@ -137,6 +137,7 @@ metrics:
       required:
         name:
         - coverage_spatial
+        - reference_system
         - resolution_spatial_as_angular_distance
   created_by: FAIRsFAIR
   date_created: 2020-07-08
