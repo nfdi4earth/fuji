@@ -100,8 +100,8 @@ class GeoDCAT_AP_Location_Validator:
         try:
             geom = shapely.geometry.shape(input)
             return True, self.normalize_shapely_object_to_string(geom)
-        except shapely.errors.WKTReadingError:
-            self.logger.debug(f"Check for GeoJSON negative for input: '{input}'")
+        except Exception as e:
+            self.logger.debug(f"Check for GeoJSON negative for input: '{input}' with error: {str(e)}")
             return False, None
 
 
@@ -123,6 +123,6 @@ class GeoDCAT_AP_Location_Validator:
         try:
             geom = shapely.wkt.loads(input)
             return True, self.normalize_shapely_object_to_string(geom)
-        except shapely.errors.WKTReadingError:
-            self.logger.debug(f"Check for WKT negative for input: '{input}'")
+        except Exception as e:
+            self.logger.debug(f"Check for WKT negative for input: '{input}' with error: {str(e)}")
             return False, None
