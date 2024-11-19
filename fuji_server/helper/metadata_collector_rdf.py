@@ -1066,6 +1066,7 @@ class MetaDataCollectorRdf(MetaDataCollector):
         dcat_root_type = "Dataset"
         datasets = []
         gdval = GeoDCAT_AP_Location_Validator(self.logger)
+        gdval.test_stuff()
         main_entity_id, main_entity_type, main_entity_namespace = self.get_main_entity(graph)
         if main_entity_id:
             if dcat_root_type == "Catalog":
@@ -1182,10 +1183,10 @@ class MetaDataCollectorRdf(MetaDataCollector):
                 spatial_coordinates = spatial_coordinate_data
                 is_validated, format, parsed_coordinates_wkt = gdval.validate(spatial_coordinate_data)
                 if is_validated:
-                    print(f"Validated coordinate data: format={str(format)}, parsed_coordinates_wkt={parsed_coordinates_wkt}")
+                    print(f"===> Validated coordinate data: format={str(format)}, parsed_coordinates_wkt={parsed_coordinates_wkt}")
                     spatial_coordinates = parsed_coordinates_wkt
                 else:
-                    print(f"Failed to validate coordinate data: {spatial_coordinate_data}")
+                    print(f"===> Failed to validate coordinate data: {spatial_coordinate_data}")
 
 
                 # spatial_coordinates = spatial_coordinate_data
