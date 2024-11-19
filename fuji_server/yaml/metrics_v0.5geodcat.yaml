@@ -503,6 +503,10 @@ metrics:
     metric_test_name: Data content matches measured variables or observation types specified in metadata
     metric_test_score: 1
     metric_test_maturity: 3
+  - metric_test_identifier: FsF-R1-01MD-5
+    metric_test_name: I am only a test
+    metric_test_score: 0
+    metric_test_maturity: 999
   created_by: FAIRsFAIR
   date_created: 2020-07-08
   date_updated: 2020-07-08

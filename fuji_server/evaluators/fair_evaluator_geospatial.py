@@ -22,11 +22,20 @@ class FAIREvaluatorGeospatial(FAIREvaluator):
 
     def __init__(self, fuji_instance):
         FAIREvaluator.__init__(self, fuji_instance)
-        self.set_metric(["FsF-I3-01M"])
+        # although 'set_metric' is able to get a list as input
+        # it is not able to handle multiple existing metrics
+        # and will simple choose the first, that really exists
+        # For now, we have to:
+        #   1. set all possbile metrics in the constructor
+        #   2. reset them before the evaluation of each test, see `evaluate()`
+        # ToDo: implement a better solution, as this works but is kind of hacky
+        self.set_metric(["FsF-I3-01M", "FsF-R1-01MD"])
+
         self.metric_test_map = {  # overall map
             "testGeospatialServiceCategory": ["FsF-I3-01M-3"],
             "testGeospatialServiceType": ["FsF-I3-01M-4"],
             "testGeospatialServiceProtocol": ["FsF-I3-01M-5"],
+            "testDebug": ["FsF-R1-01MD-5"],
         }
         self.is_actionable = False
 
@@ -72,6 +81,33 @@ class FAIREvaluatorGeospatial(FAIREvaluator):
 
         return test_status
 
+    # Overwrite the method to print the overarching metric
+    # for debugging purposes
+    # ToDo: remove this method, when the debugging is done
+    def isTestDefined(self, testid):
+        result = super().isTestDefined(testid)
+        print(f"testid: {testid}")
+        print(f"overarching metric: {self.metric_identifier}")
+        print(f"isTestDefined: {result}")
+        return result
+
+    # This method is only used to debug if this class is able to handle
+    # tests from multiple metrics
+    # ToDo: remove this method, when the debugging is done
+    def testDebug(self):
+        agnostic_test_name = "testDebug"
+        test_status = False
+        test_defined = False
+        for test_id in self.metric_test_map[agnostic_test_name]:
+            if self.isTestDefined(test_id):
+                test_defined = True
+                break
+        if test_defined:
+            test_score = self.getTestConfigScore(test_id)
+            # TODO implement
+
+        return test_status
+
     def evaluate(self):
         self.output = GeospatialOutput()
 
@@ -82,11 +118,19 @@ class FAIREvaluatorGeospatial(FAIREvaluator):
         )
 
         geospatial_status = "fail"
+
+        # set overarching metric
+        self.set_metric(["FsF-I3-01M"])
+        if self.testGeospatialServiceCategory():
+            geospatial_status = "pass"
+        if self.testGeospatialServiceProtocol():
+            geospatial_status = "pass"
         if self.testGeospatialServiceType():
             geospatial_status = "pass"
-        if self.testGeospatialServiceProtocol():
-            geospatial_status = "pass"
-        if self.testGeospatialServiceProtocol():
+
+        # set overarching metric
+        self.set_metric(["FsF-R1-01MD"])
+        if self.testDebug():
             geospatial_status = "pass"
 
         self.result.test_status = geospatial_status
