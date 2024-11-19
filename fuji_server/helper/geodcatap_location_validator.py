@@ -3,7 +3,7 @@ import shapely.wkt
 import shapely.errors
 from shapely import from_wkt, to_wkt, to_geojson
 import logging
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Union
 from enum import Enum
 import rdflib
 
@@ -25,7 +25,7 @@ class GeoDCAT_AP_Location_Validator:
         self.logger = logger
 
 
-    def validate(self, input : str) -> Tuple[bool, str]:
+    def validate(self, input : Union[rdflib.term.Literal, str], check_values : List[LocationFormat] = [lf for lf in LocationFormat]) -> Tuple[bool, str]:
         """
         Validates the coordinates of a dataset in GeoDCAT-AP 3.0 format.
 
@@ -39,27 +39,35 @@ class GeoDCAT_AP_Location_Validator:
         normalized_input = None   # Normalized to WKT
 
         if isinstance(input, rdflib.term.Literal):
-            input = input.value
+            input = str(input)
+
+        print(f"validate() Input: {input}")
 
         if input is None:
             return (is_validated, is_format, normalized_input) # Return early if input is None
 
-        is_valid_wkt, normalized = self.is_valid_wkt(input)
-        if is_valid_wkt:
-            is_validated = True
-            is_format = LocationFormat.WKT_RAW
-            normalized_input = normalized
+        if LocationFormat.WKT_RAW in check_values:
+            is_valid_wkt, normalized = self.is_valid_wkt(input)
+            if is_valid_wkt:
+                is_validated = True
+                is_format = LocationFormat.WKT_RAW
+                normalized_input = normalized
 
-        is_valid_geojson, normalized = self.is_valid_geojson(input)
-        if is_valid_geojson:
-            is_validated = True
-            is_format = LocationFormat.GEOJSON
-            normalized_input = normalized
+        if LocationFormat.GEOJSON in check_values:
+            is_valid_geojson, normalized = self.is_valid_geojson(input)
+            if is_valid_geojson:
+                is_validated = True
+                is_format = LocationFormat.GEOJSON
+                normalized_input = normalized
 
         return (is_validated, is_format, normalized_input)
 
     def normalize_shapely_object_to_string(self, shapely_obj : shapely.geometry.base.BaseGeometry) -> str:
-        """Normalize a Shapely object to a string.
+        """
+        Normalize a Shapely object to a string. We use this function to convert all different
+        input coordinate representation to a single one we consider our standard. For now, this
+        standard is WKT.
+
 
         Parameters
         ----------
@@ -74,43 +82,47 @@ class GeoDCAT_AP_Location_Validator:
         return to_wkt(shapely_obj)
 
 
-    def is_valid_geojson(self, geojson : str) -> bool:
-        """Check if the GeoJSON string is valid.
+    def is_valid_geojson(self, input : str) -> bool:
+        """Check if the input string is valid GeoJSON.
 
         Parameters
         ----------
-        geojson : str
-            GeoJSON string
+        input : str
+            string to check for GeoJSON format
 
         Returns
         ------
         bool
-            True if GeoJSON is valid, False otherwise
+            True if input could be parsed as GeoJSON format, False otherwise
+        input_converted : str
+            input as WKT format, if the parsing was successful, otherwise None
         """
         try:
-            geom = shapely.geometry.shape(geojson)
+            geom = shapely.geometry.shape(input)
             return True, self.normalize_shapely_object_to_string(geom)
         except shapely.errors.WKTReadingError:
-            self.logger.error(f"Invalid GeoJSON string: {geojson}")
+            self.logger.debug(f"Check for GeoJSON negative for input: '{input}'")
             return False, None
 
 
-    def is_valid_wkt(self, wkt : str) -> bool:
-        """Check if the WKT string is valid.
+    def is_valid_wkt(self, input : str) -> bool:
+        """Check if the input string is valid WKT.
 
         Parameters
         ----------
-        wkt : str
-            WKT string
+        input : str
+            string to check for WKT format
 
         Returns
         ------
         bool
-            True if WKT is valid, False otherwise
+            True if input could be parsed as WKT format, False otherwise
+        input_converted : str
+            input as WKT format, if the parsing was successful, otherwise None
         """
         try:
-            geom = shapely.wkt.loads(wkt)
+            geom = shapely.wkt.loads(input)
             return True, self.normalize_shapely_object_to_string(geom)
         except shapely.errors.WKTReadingError:
-            self.logger.info(f"Check for WKT negative: Invalid WKT string: {wkt}")
+            self.logger.debug(f"Check for WKT negative for input: '{input}'")
             return False, None
