@@ -2,7 +2,7 @@
 import rdflib.term
 import shapely.wkt
 import shapely.errors
-from shapely import from_wkt, to_wkt, to_geojson
+from shapely import from_wkt, to_wkt, to_geojson, from_wkb, from_wkt
 import logging
 from typing import List, Dict, Any, Tuple, Union
 from enum import Enum
@@ -11,8 +11,11 @@ from rdflib.namespace import XSD
 import json
 
 class LocationFormat(Enum):
-    WKT_RAW = "WKT_RAW"    # Raw means that the WKT string is not wrapped in a GeoJSON object, or any other object.
+    WKT = "WKT"            # Well-Known Text format
     GEOJSON = "GEOJSON"    # GeoJSON format
+    KML = "KML"            # KML format: Keyhole Markup Language
+    GML = "GML"            # GML format: Geography Markup Language
+    WKB = "WKB"            # WKB format: Well-Known Binary
 
 
 
@@ -25,13 +28,16 @@ def get_formats_for_literal_datatype(datatype: rdflib.term.URIRef) -> List[Locat
     :return: List of supported formats for the given datatype.
     :rtype: List[LocationFormat]
     """
-
     if datatype == XSD.wktLiteral:
-        return [LocationFormat.WKT_RAW]
+        return [LocationFormat.WKT]
     elif datatype == XSD.geojson:
         return [LocationFormat.GEOJSON]
     elif datatype == XSD.string:
-        return [LocationFormat.WKT_RAW, LocationFormat.GEOJSON]
+        # we don't know, return all available formats
+        [lf for lf in LocationFormat]
+    elif datatype == XSD.anyURI:
+        # we don't know, return all available formats
+        [lf for lf in LocationFormat]  # We could check for custom strings here
     else:
         # we don't know, return all available formats
         print(f"Could not auto-detect format for datatype: {datatype}. Will check all available formats.")
@@ -89,7 +95,7 @@ class GeoDCAT_AP_Location_Validator:
         else:
             print(f"Formats to check for (requested by user): {check_values}")
 
-        format = LocationFormat.WKT_RAW
+        format = LocationFormat.WKT
         if format in check_values:
             is_valid_wkt, normalized = self.is_valid_wkt(input)
             if is_valid_wkt:
@@ -111,7 +117,43 @@ class GeoDCAT_AP_Location_Validator:
             else:
                 print(f"# Checking for {format}... No")
 
+        format = LocationFormat.KML
+        if format in check_values:
+            is_valid_kml, normalized = self.is_valid_kml(input)
+            if is_valid_kml:
+                print(f"# Checking for {format}... Yes")
+                is_validated = True
+                is_format = format
+                normalized_input = normalized
+            else:
+                print(f"# Checking for {format}... No")
+
+        format = LocationFormat.GML
+        if format in check_values:
+            is_valid_gml, normalized = self.is_valid_gml(input)
+            if is_valid_gml:
+                print(f"# Checking for {format}... Yes")
+                is_validated = True
+                is_format = format
+                normalized_input = normalized
+            else:
+                print(f"# Checking for {format}... No")
+
+        format = LocationFormat.WKB
+        if format in check_values:
+            is_valid_wkb, normalized = self.is_valid_wkb(input)
+            if is_valid_wkb:
+                print(f"# Checking for {format}... Yes")
+                is_validated = True
+                is_format = format
+                normalized_input = normalized
+            else:
+                print(f"# Checking for {format}... No")
+
+
+
         return (is_validated, is_format, normalized_input)
+
 
     def normalize_shapely_object_to_string(self, shapely_obj : shapely.geometry.base.BaseGeometry) -> str:
         """
@@ -128,13 +170,15 @@ class GeoDCAT_AP_Location_Validator:
         Returns
         ------
         str
-            Normalized string
+            Normalized string in WKT format
         """
         return to_wkt(shapely_obj)
 
 
     def is_valid_geojson(self, input : str) -> bool:
-        """Check if the input string is valid GeoJSON.
+        """
+        Check if the input string is valid GeoJSON.
+        Tries to load the input as JSON. If successful, tries to load the JSON using ```shapely```.
 
         Parameters
         ----------
@@ -144,9 +188,9 @@ class GeoDCAT_AP_Location_Validator:
         Returns
         ------
         bool
-            True if input could be parsed as GeoJSON format, False otherwise
-        input_converted : str
-            input as WKT format, if the parsing was successful, otherwise None
+            ```True``` if input could be parsed as GeoJSON format, ```False``` otherwise
+        input_converted : str | None
+            the input converted to a WKT format ```str``` if the parsing was successful, otherwise ```None```
         """
         try:
             input_json = json.loads(input)
@@ -169,7 +213,7 @@ class GeoDCAT_AP_Location_Validator:
         ------
         bool
             True if input could be parsed as WKT format, False otherwise
-        input_converted : str
+        input_converted : str | None
             input as WKT format, if the parsing was successful, otherwise None
         """
         try:
@@ -178,6 +222,94 @@ class GeoDCAT_AP_Location_Validator:
         except Exception as e:
             self.logger.debug(f"Check for WKT negative for input: '{input}' with error: {str(e)}")
             return False, None
+
+
+    def is_valid_kml(self, input : str) -> bool:
+        """
+        Check if the input string is valid KML.
+        KML is the Keyhole Markup Language, an XML-based language schema for expressing geographic annotations.
+
+        Parameters
+        ----------
+        input : str
+            string to check for KML format
+
+        Returns
+        ------
+        bool
+            True if input could be parsed as KML format, False otherwise
+        input_converted : str | None
+            input as WKT format, if the parsing was successful, otherwise None
+        """
+        try:
+            import fastkml.kml as kml
+            k = kml.KML.from_string(input)
+            # KML is a container format that may contain information on several Placemarks, which each may have a 'geometry' feature.
+            # In the following, we arbitrarily test the first feature to see whether it has a geometry.
+            norm = None
+            try:
+                if len(k.__geo_interface__["features"]) >= 1:
+                    feature = k.__geo_interface__["features"][0] # Get the first feature or Placemark
+                    geometry = shapely.geometry.shape(feature["geometry"])
+                    geom = shapely.geometry.shape(geometry)
+                    norm = self.normalize_shapely_object_to_string(geom)
+            except Exception as e:
+                pass  # It's fine if we can't parse the geometry. We cannot convert to a common format in this case.
+            return True, norm
+        except Exception as e:
+            self.logger.debug(f"Check for KML negative for input: '{input}' with error: {str(e)}")
+            return False, None
+
+
+    def is_valid_gml(self, input : str) -> bool:
+        """
+        Check if the input string is valid GML.
+        GML is the Geography Markup Language, an XML grammar for expressing geographical features.
+
+        Parameters
+        ----------
+        input : str
+            string to check for GML format
+
+        Returns
+        ------
+        bool
+            True if input could be parsed as GML format, False otherwise
+        input_converted : str | None
+            input as WKT format, if the parsing was successful, otherwise None
+        """
+        try:
+            geom = shapely.geometry.shape(input)
+            return True, self.normalize_shapely_object_to_string(geom)
+        except Exception as e:
+            self.logger.debug(f"Check for GML negative for input: '{input}' with error: {str(e)}")
+            return False, None
+
+
+    def is_valid_wkb(self, input : str) -> bool:
+        """
+        Check if the input string is valid WKB.
+        WKB is the Well-Known Binary format for representing geometry.
+
+        Parameters
+        ----------
+        input : str
+            string to check for WKB format
+
+        Returns
+        ------
+        bool
+            True if input could be parsed as WKB format, False otherwise
+        input_converted : str | None
+            input as WKT format, if the parsing was successful, otherwise None
+        """
+        try:
+            geom = from_wkb(input)
+            return True, self.normalize_shapely_object_to_string(geom)
+        except Exception as e:
+            self.logger.debug(f"Check for WKB negative for input: '{input}' with error: {str(e)}")
+            return False, None
+
 
 
 
