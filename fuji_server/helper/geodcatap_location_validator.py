@@ -34,41 +34,15 @@ class GeoDCAT_AP_Location_Validator:
         if self.logger is None:
             self.logger = logging.getLogger(__name__)
 
-    def get_formats_for_literal_datatype(self, datatype: rdflib.term.URIRef) -> List[LocationFormat]:
-        """
-        Get the supported formats for a given datatype of a literal.
 
-        :param datatype: The datatype of the literal.
-        :type datatype: rdflib.term.URIRef
-        :return: List of supported formats for the given datatype.
-        :rtype: List[LocationFormat]
-        """
-        if datatype == XSD.wktLiteral:
-            return [LocationFormat.WKT]
-        elif datatype == XSD.geojson:
-            return [LocationFormat.GEOJSON]
-        elif datatype == XSD.string:
-            # we don't know, return all available formats
-            [lf for lf in LocationFormat]
-        elif datatype == XSD.anyURI:
-            # we don't know, return all available formats
-            [lf for lf in LocationFormat]  # We could check for custom strings here
-        else:
-            # we don't know, return all available formats
-            self.logger.debug(f"Could not auto-detect format for datatype: {datatype}. Will check all available formats.")
-            return [lf for lf in LocationFormat]
-
-
-
-
-    def validate(self, input : Union[rdflib.term.Literal, str, None], check_values : Union[List[LocationFormat], str] = [lf for lf in LocationFormat]) -> Tuple[bool, str]:
+    def validate(self, input : Union[rdflib.term.Literal, str, None], check_values : List[LocationFormat] = [lf for lf in LocationFormat]) -> Tuple[bool, str]:
         """
         Validates the coordinates of a dataset in GeoDCAT-AP 3.0 format.
 
         :param input: The coordinate metadata of the dataset.
         :type input: str, None, or rdflib.term.Literal
-        :param check_values: The formats to check for. If set to "auto_detect", the function will try to detect the format based on the datatype of the input, if the input is of type ```rdflib.term.Literal```. If set to a list of LocationFormat values, the function will only check for the specified formats. Defaults to all available formats from the enum ```LocationFormat```.
-        :type check_values: List[LocationFormat], str
+        :param check_values: The formats to check for. Defaults to all available formats from the enum ```LocationFormat```.
+        :type check_values: List[LocationFormat]
         :return: 3-Tuple of ```bool```, ```LocationFormat``` and ```str```. The ```bool``` is ```True``` if the input could be parsed successfully as one of the tested formats, and ```False``` otherwise. Note that a ```False``` does not mean the string is broken, it may be freeform, which is fine, or in a different format which we did not check for. The ```LocationFormat``` entry in the tuple is the format of the input, if it could be parsed successfully, otherwise ```None```. The ```str``` is the normalized input in WKT format, if it could be parsed successfully, otherwise ```None```.
         :rtype: bool
         """
@@ -93,11 +67,6 @@ class GeoDCAT_AP_Location_Validator:
 
         self.logger.debug(f"validate() Input: {input}")
 
-        if datatype is not None and check_values == "auto_detect":
-            check_values = self.get_formats_for_literal_datatype(datatype)
-            self.logger.debug(f"Formats to check for (auto-detected): {check_values}")
-        else:
-            self.logger.debug(f"Formats to check for (requested by user): {check_values}")
 
         for format in check_values:
             is_valid, normalized = self.is_valid_format(input, format)
