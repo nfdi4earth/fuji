@@ -64,12 +64,16 @@ def test_is_valid_geojson_with_valid_input():
 def test_is_valid_geojson_with_invalid_input():
 
     invalid_geojson1 = 'POINT (30 10)'
+    invalid_geojson2 = """{ "type": "Dunno", "coordinates": [] }"""
 
     logger = logging.getLogger(__name__)
 
-    valid_geojson_strings = [invalid_geojson1]
+    valid_geojson_strings = [invalid_geojson1, invalid_geojson2]
 
     gdval = GeoDCAT_AP_Location_Validator(logger)
     for geojson in valid_geojson_strings:
         is_valid, _ = gdval.is_valid_geojson(geojson)
         assert not is_valid, f"Expected invalid GeoJSON string: {geojson}"
+
+def test_geojson_is_identified_correctly():
+    valid_geojson1 = """{ "type": "Point", "coordinates": [125.6, 10.1] }"""
