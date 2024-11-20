@@ -29,7 +29,7 @@ def test_is_valid_wkt_with_valid_input():
     gdval = GeoDCAT_AP_Location_Validator(logger)
     for wkt in valid_wkt_strings:
         is_valid, _ = gdval.is_valid_wkt(wkt)
-        assert is_valid
+        assert is_valid, f"Expected valid WKT string: {wkt}"
 
 
 def test_is_valid_wkt_with_invalid_input():
@@ -44,7 +44,7 @@ def test_is_valid_wkt_with_invalid_input():
     gdval = GeoDCAT_AP_Location_Validator(logger)
     for wkt in invalid_wkt_strings:
         is_valid, _ = gdval.is_valid_wkt(wkt)
-        assert not is_valid
+        assert not is_valid, f"Expected invalid WKT string: {wkt}"
 
 
 def test_is_valid_geojson_with_valid_input():
@@ -58,7 +58,7 @@ def test_is_valid_geojson_with_valid_input():
     gdval = GeoDCAT_AP_Location_Validator(logger)
     for geojson in valid_geojson_strings:
         is_valid, _ = gdval.is_valid_geojson(geojson)
-        assert is_valid
+        assert is_valid, f"Expected valid GeoJSON string: {geojson}"
 
 
 def test_is_valid_geojson_with_invalid_input():
@@ -72,4 +72,4 @@ def test_is_valid_geojson_with_invalid_input():
     gdval = GeoDCAT_AP_Location_Validator(logger)
     for geojson in valid_geojson_strings:
         is_valid, _ = gdval.is_valid_geojson(geojson)
-        assert not is_valid
+        assert not is_valid, f"Expected invalid GeoJSON string: {geojson}"
