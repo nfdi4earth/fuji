@@ -4,6 +4,7 @@
 
 from fuji_server.helper.geodcatap_location_validator import GeoDCAT_AP_Location_Validator, LocationFormat
 import logging
+import random
 from shapely import from_wkt, to_wkb
 
 def test_instance_with_logger():
@@ -178,6 +179,25 @@ def test_is_valid_wkb_with_valid_input():
     for wkb in valid_wkbs:
         is_valid, _ = gdval.is_valid_wkb(wkb)
         assert is_valid, f"Expected valid WKB string: {wkb}"
+
+
+def test_is_valid_wkb_with_invalid_input():
+
+    # Seed the random number generator, so this is always the same to avoid random test failures.
+    random.seed(42)
+    random_bytes_fixed = (random.randbytes(8))
+
+    invalid_wkb1 : bytes = random.randbytes(8)
+    invalid_wkb2 : bytes = random.randbytes(10)
+    invalid_wkb3 : bytes = random.randbytes(12)
+    invalid_wkb4 : bytes = random.randbytes(16)
+
+    invalid_wkbs = [invalid_wkb1, invalid_wkb2, invalid_wkb3, invalid_wkb4]
+
+    gdval = GeoDCAT_AP_Location_Validator()
+    for wkb in invalid_wkbs:
+        is_valid, _ = gdval.is_valid_wkb(wkb)
+        assert not is_valid, f"Expected invalid WKB bytes: {str(wkb)}"
 
 
 ### -------------------------------- Identify format tests -------------------------------- ###
