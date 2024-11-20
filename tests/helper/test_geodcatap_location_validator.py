@@ -12,7 +12,7 @@ def test_instance():
     assert gdval
 
 
-def test_validate_valid_wkt():
+def test_is_valid_wkt_with_valid_input():
 
     wkt_point = 'POINT (30 10)'
     wkt_linestring = 'LINESTRING (30 10, 10 30, 40 40)'
@@ -32,7 +32,7 @@ def test_validate_valid_wkt():
         assert is_valid
 
 
-def test_validate_invalid_wkt():
+def test_is_valid_wkt_with_invalid_input():
 
     wkt_invalid1 = "hello world"
     wkt_invalid2 = 'POINT'
@@ -44,4 +44,32 @@ def test_validate_invalid_wkt():
     gdval = GeoDCAT_AP_Location_Validator(logger)
     for wkt in invalid_wkt_strings:
         is_valid, _ = gdval.is_valid_wkt(wkt)
+        assert not is_valid
+
+
+def test_is_valid_geojson_with_valid_input():
+
+    valid_geojson1 = """{ "type": "Point", "coordinates": [125.6, 10.1] }"""
+
+    logger = logging.getLogger(__name__)
+
+    valid_geojson_strings = [valid_geojson1]
+
+    gdval = GeoDCAT_AP_Location_Validator(logger)
+    for geojson in valid_geojson_strings:
+        is_valid, _ = gdval.is_valid_geojson(geojson)
+        assert is_valid
+
+
+def test_is_valid_geojson_with_invalid_input():
+
+    invalid_geojson1 = 'POINT (30 10)'
+
+    logger = logging.getLogger(__name__)
+
+    valid_geojson_strings = [invalid_geojson1]
+
+    gdval = GeoDCAT_AP_Location_Validator(logger)
+    for geojson in valid_geojson_strings:
+        is_valid, _ = gdval.is_valid_geojson(geojson)
         assert not is_valid

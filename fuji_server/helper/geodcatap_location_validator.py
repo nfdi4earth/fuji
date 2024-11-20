@@ -95,64 +95,47 @@ class GeoDCAT_AP_Location_Validator:
         else:
             print(f"Formats to check for (requested by user): {check_values}")
 
-        format = LocationFormat.WKT
-        if format in check_values:
-            is_valid_wkt, normalized = self.is_valid_wkt(input)
-            if is_valid_wkt:
-                print(f"# Checking for {format}... Yes")
+        for format in check_values:
+            is_valid, normalized = self.is_valid_format(input, format)
+            if is_valid:
                 is_validated = True
                 is_format = format
                 normalized_input = normalized
-            else:
-                print(f"# Checking for {format}... No")
-
-        format = LocationFormat.GEOJSON
-        if format in check_values:
-            is_valid_geojson, normalized = self.is_valid_geojson(input)
-            if is_valid_geojson:
-                print(f"# Checking for {format}... Yes")
-                is_validated = True
-                is_format = format
-                normalized_input = normalized
-            else:
-                print(f"# Checking for {format}... No")
-
-        format = LocationFormat.KML
-        if format in check_values:
-            is_valid_kml, normalized = self.is_valid_kml(input)
-            if is_valid_kml:
-                print(f"# Checking for {format}... Yes")
-                is_validated = True
-                is_format = format
-                normalized_input = normalized
-            else:
-                print(f"# Checking for {format}... No")
-
-        format = LocationFormat.GML
-        if format in check_values:
-            is_valid_gml, normalized = self.is_valid_gml(input)
-            if is_valid_gml:
-                print(f"# Checking for {format}... Yes")
-                is_validated = True
-                is_format = format
-                normalized_input = normalized
-            else:
-                print(f"# Checking for {format}... No")
-
-        format = LocationFormat.WKB
-        if format in check_values:
-            is_valid_wkb, normalized = self.is_valid_wkb(input)
-            if is_valid_wkb:
-                print(f"# Checking for {format}... Yes")
-                is_validated = True
-                is_format = format
-                normalized_input = normalized
-            else:
-                print(f"# Checking for {format}... No")
-
-
+                break
 
         return (is_validated, is_format, normalized_input)
+
+
+    def is_valid_format(self, input: str, format: LocationFormat) -> Tuple[bool, str]:
+        """
+        Check if the input string is valid in the specified format.
+
+        :param input: The input string to check.
+        :type input: str
+        :param format: The format to check for.
+        :type format: LocationFormat
+        :return: 2-Tuple of ```bool``` and ```str```. The ```bool``` is ```True``` if the input could be parsed successfully as the specified format, and ```False``` otherwise. Note that a ```False``` does not mean the string is broken, it may be freeform, which is fine, or in a different format which we did not check for. The ```str``` is the normalized input in WKT format, if it could be parsed successfully, otherwise ```None```.
+        :rtype: Tuple[bool, str]
+        """
+        is_valid = False
+        normalized = None
+
+        if format == LocationFormat.WKT:
+            is_valid, normalized = self.is_valid_wkt(input)
+        elif format == LocationFormat.GEOJSON:
+            is_valid, normalized = self.is_valid_geojson(input)
+        elif format == LocationFormat.KML:
+            is_valid, normalized = self.is_valid_kml(input)
+        elif format == LocationFormat.GML:
+            is_valid, normalized = self.is_valid_gml(input)
+        elif format == LocationFormat.WKB:
+            is_valid, normalized = self.is_valid_wkb(input)
+        else:
+            raise ValueError(f"Unsupported format: {format}")
+
+        print(f"# Checking for {format}... Yes") if is_valid else print(f"# Checking for {format}... No")
+
+        return (is_valid, normalized)
 
 
     def normalize_shapely_object_to_string(self, shapely_obj : shapely.geometry.base.BaseGeometry) -> str:
@@ -175,7 +158,7 @@ class GeoDCAT_AP_Location_Validator:
         return to_wkt(shapely_obj)
 
 
-    def is_valid_geojson(self, input : str) -> bool:
+    def is_valid_geojson(self, input : str) -> Tuple[bool, str]:
         """
         Check if the input string is valid GeoJSON.
         Tries to load the input as JSON. If successful, tries to load the JSON using ```shapely```.
@@ -201,7 +184,7 @@ class GeoDCAT_AP_Location_Validator:
             return False, None
 
 
-    def is_valid_wkt(self, input : str) -> bool:
+    def is_valid_wkt(self, input : str) -> Tuple[bool, str]:
         """Check if the input string is valid WKT.
 
         Parameters
@@ -224,7 +207,7 @@ class GeoDCAT_AP_Location_Validator:
             return False, None
 
 
-    def is_valid_kml(self, input : str) -> bool:
+    def is_valid_kml(self, input : str) -> Tuple[bool, str]:
         """
         Check if the input string is valid KML.
         KML is the Keyhole Markup Language, an XML-based language schema for expressing geographic annotations.
@@ -261,7 +244,7 @@ class GeoDCAT_AP_Location_Validator:
             return False, None
 
 
-    def is_valid_gml(self, input : str) -> bool:
+    def is_valid_gml(self, input : str) -> Tuple[bool, str]:
         """
         Check if the input string is valid GML.
         GML is the Geography Markup Language, an XML grammar for expressing geographical features.
@@ -288,7 +271,7 @@ class GeoDCAT_AP_Location_Validator:
             return False, None
 
 
-    def is_valid_wkb(self, input : str) -> bool:
+    def is_valid_wkb(self, input : str) -> Tuple[bool, str]:
         """
         Check if the input string is valid WKB.
         WKB is the Well-Known Binary format for representing geometry.
