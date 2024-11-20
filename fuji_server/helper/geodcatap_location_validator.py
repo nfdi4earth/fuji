@@ -19,30 +19,6 @@ class LocationFormat(Enum):
 
 
 
-def get_formats_for_literal_datatype(datatype: rdflib.term.URIRef) -> List[LocationFormat]:
-    """
-    Get the supported formats for a given datatype of a literal.
-
-    :param datatype: The datatype of the literal.
-    :type datatype: rdflib.term.URIRef
-    :return: List of supported formats for the given datatype.
-    :rtype: List[LocationFormat]
-    """
-    if datatype == XSD.wktLiteral:
-        return [LocationFormat.WKT]
-    elif datatype == XSD.geojson:
-        return [LocationFormat.GEOJSON]
-    elif datatype == XSD.string:
-        # we don't know, return all available formats
-        [lf for lf in LocationFormat]
-    elif datatype == XSD.anyURI:
-        # we don't know, return all available formats
-        [lf for lf in LocationFormat]  # We could check for custom strings here
-    else:
-        # we don't know, return all available formats
-        print(f"Could not auto-detect format for datatype: {datatype}. Will check all available formats.")
-        return [lf for lf in LocationFormat]
-
 
 """
 Validates the location of a dataset in GeoDCAT-AP 3.0 format.
@@ -53,8 +29,36 @@ class GeoDCAT_AP_Location_Validator:
     logger: logging.Logger | None = None
 
 
-    def __init__(self, logger: logging.Logger):
+    def __init__(self, logger: logging.Logger | None = None):
         self.logger = logger
+        if self.logger is None:
+            self.logger = logging.getLogger(__name__)
+
+    def get_formats_for_literal_datatype(self, datatype: rdflib.term.URIRef) -> List[LocationFormat]:
+        """
+        Get the supported formats for a given datatype of a literal.
+
+        :param datatype: The datatype of the literal.
+        :type datatype: rdflib.term.URIRef
+        :return: List of supported formats for the given datatype.
+        :rtype: List[LocationFormat]
+        """
+        if datatype == XSD.wktLiteral:
+            return [LocationFormat.WKT]
+        elif datatype == XSD.geojson:
+            return [LocationFormat.GEOJSON]
+        elif datatype == XSD.string:
+            # we don't know, return all available formats
+            [lf for lf in LocationFormat]
+        elif datatype == XSD.anyURI:
+            # we don't know, return all available formats
+            [lf for lf in LocationFormat]  # We could check for custom strings here
+        else:
+            # we don't know, return all available formats
+            self.logger.debug(f"Could not auto-detect format for datatype: {datatype}. Will check all available formats.")
+            return [lf for lf in LocationFormat]
+
+
 
 
     def validate(self, input : Union[rdflib.term.Literal, str, None], check_values : Union[List[LocationFormat], str] = [lf for lf in LocationFormat]) -> Tuple[bool, str]:
@@ -77,23 +81,23 @@ class GeoDCAT_AP_Location_Validator:
 
         if isinstance(input, rdflib.term.Literal):
             datatype = input.datatype
-            print(f"Type of input: {type(input)}")
+            self.logger.debug(f"Type of input: {type(input)}")
             input = str(input)
-            print(f"Input is Literal with datatype: {datatype} and value: {input}")
+            self.logger.debug(f"Input is Literal with datatype: {datatype} and value: {input}")
         else:
             # Check if input is a string
             if not isinstance(input, str):
                 raise ValueError("Expected input to be a string or rdflib.term.Literal")
-            print(f"Input is string: {input}")
+            self.logger.debug(f"Input is string: {input}")
             datatype = None
 
-        print(f"validate() Input: {input}")
+        self.logger.debug(f"validate() Input: {input}")
 
         if datatype is not None and check_values == "auto_detect":
-            check_values = get_formats_for_literal_datatype(datatype)
-            print(f"Formats to check for (auto-detected): {check_values}")
+            check_values = self.get_formats_for_literal_datatype(datatype)
+            self.logger.debug(f"Formats to check for (auto-detected): {check_values}")
         else:
-            print(f"Formats to check for (requested by user): {check_values}")
+            self.logger.debug(f"Formats to check for (requested by user): {check_values}")
 
         for format in check_values:
             is_valid, normalized = self.is_valid_format(input, format)
@@ -133,7 +137,7 @@ class GeoDCAT_AP_Location_Validator:
         else:
             raise ValueError(f"Unsupported format: {format}")
 
-        print(f"# Checking for {format}... Yes") if is_valid else print(f"# Checking for {format}... No")
+        self.logger.debug(f"# Checking for {format}... Yes") if is_valid else self.logger.debug(f"# Checking for {format}... No")
 
         return (is_valid, normalized)
 
@@ -304,6 +308,6 @@ class GeoDCAT_AP_Location_Validator:
         geojson = '{"type":"MultiPolygon","coordinates":[[[[11.822662353515623,50.42415935070463],[11.822662353515623,50.82491508698821],[12.564239501953123,50.82491508698821],[12.564239501953123,50.42415935070463],[11.822662353515623,50.42415935070463]]]]}'
         geojson = json.loads(geojson)
         geom = shapely.geometry.shape(geojson)
-        print(f"test_stuff: geom: {geom}")
+        self.logger.debug(f"test_stuff: geom: {geom}")
 
 
