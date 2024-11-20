@@ -183,9 +183,9 @@ def test_is_valid_wkb_with_valid_input():
 
 def test_is_valid_wkb_with_invalid_input():
 
-    # Seed the random number generator, so this is always the same to avoid random test failures.
+    # Seed the random number generator, so the values below are always
+    #  the same to avoid random test failures.
     random.seed(42)
-    random_bytes_fixed = (random.randbytes(8))
 
     invalid_wkb1 : bytes = random.randbytes(8)
     invalid_wkb2 : bytes = random.randbytes(10)
