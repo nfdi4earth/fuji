@@ -271,7 +271,7 @@ class GeoDCAT_AP_Location_Validator:
             geom = shapely.geometry.shape(geom_xml_tree.__geo_interface__)
             return True, self.normalize_shapely_object_to_string(geom)
         except Exception as e:
-            self.logger.debug(f"Check for GML negative for input: '{input}' with error: {str(e)}")
+            print(f"Check for GML negative for input: '{input}' with error: {str(e)}")
             return False, None
 
 
