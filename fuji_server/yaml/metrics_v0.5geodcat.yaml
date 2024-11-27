@@ -381,6 +381,22 @@ metrics:
       required:
         name:
         - sparql
+  - metric_test_identifier: FsF-I1-01M-3
+    metric_test_name: Metadata uses formal knowledge representation standards to express spatio-temporal properties
+    metric_test_score: 1
+    metric_test_maturity: 4
+    metric_test_requirements:
+    - target: https://f-uji.net/vocab/metadata/property
+      modality: all
+      required:
+        name:
+        - coverage_temporal
+        - resolution_temporal 
+  created_by: FAIRsFAIR
+  date_created: 2020-07-08
+  date_updated: 2022-05-30
+  version: 0.5
+  total_score: 3
   created_by: FAIRsFAIR
   date_created: 2020-07-08
   date_updated: 2023-06-01
@@ -415,6 +431,8 @@ metrics:
   date_updated: 2020-12-03
   version: 0.5
   total_score: 1
+
+
 
 - metric_identifier: FsF-I3-01M
   metric_number: 12

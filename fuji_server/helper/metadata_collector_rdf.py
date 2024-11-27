@@ -1232,7 +1232,6 @@ class MetaDataCollectorRdf(MetaDataCollector):
             # Spatial coverage
             spatial_coverages = graph.objects(datasets[0], DCT.spatial)
             geodcat_metadata['coverage_spatial'] = []
-
             for spatial in spatial_coverages:
                 spatial_info = {}
                 geometry = None
@@ -1262,18 +1261,23 @@ class MetaDataCollectorRdf(MetaDataCollector):
             # Temporal coverage
             temporal_coverages = graph.objects(datasets[0], DCT.temporal)
             geodcat_metadata['coverage_temporal'] = []
-            for temporal in temporal_coverages:
-                print(temporal)
-                startDate = graph.value(temporal, DCAT.startDate)
-                endDate = graph.value(temporal, DCAT.endDate)
-
-                temporal_info = {}
-                temporal_info['startDate'] = graph.value(temporal, DCAT.startDate)
-                temporal_info['endDate'] = graph.value(temporal, DCAT.endDate)
-
-                if temporal_info:
-                    geodcat_metadata['coverage_temporal'].append(temporal_info)
             
+            for temporal in temporal_coverages:
+                for subj, pred, obj in graph.triples((temporal, None, None)):
+                    print(f"  - {subj} {pred} {obj}")
+                print("next temporal!!")
+                for pot in graph.objects(temporal, DCT.PeriodOfTime):
+                    print("a pot")
+                    temporal_info = {}
+                    startDate = graph.value(pot, DCAT.startDate)
+                    endDate = graph.value(pot, DCAT.endDate)
+
+                    temporal_info['startDate'] = startDate
+                    temporal_info['endDate'] = endDate
+
+                    if temporal_info:
+                        geodcat_metadata['coverage_temporal'].append(temporal_info)
+            print(geodcat_metadata['coverage_temporal'])
             # Temporal resolution
             geodcat_metadata['resolution_temporal'] = graph.value(datasets[0], DCAT.temporal_resolution)
 

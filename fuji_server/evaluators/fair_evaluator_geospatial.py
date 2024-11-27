@@ -32,9 +32,10 @@ class FAIREvaluatorGeospatial(FAIREvaluator):
         self.set_metric(["FsF-I3-01M", "FsF-R1-01MD"])
 
         self.metric_test_map = {  # overall map
-            "testGeospatialServiceCategory": ["FsF-I3-01M-3"],
-            "testGeospatialServiceType": ["FsF-I3-01M-4"],
-            "testGeospatialServiceProtocol": ["FsF-I3-01M-5"],
+            # "testGeospatialServiceCategory": ["FsF-I3-01M-3"],
+            # "testGeospatialServiceType": ["FsF-I3-01M-4"],
+            # "testGeospatialServiceProtocol": ["FsF-I3-01M-5"],
+            "testTemporalCoverage": ["FsF-I1-01M-3"],
             "testDebug": ["FsF-R1-01MD-5"],
         }
         self.is_actionable = False
@@ -81,6 +82,23 @@ class FAIREvaluatorGeospatial(FAIREvaluator):
 
         return test_status
 
+
+    def testTemporalCoverage(self):
+        print("testing temp coverage, nothing happens yet!!")
+        agnostic_test_name = "testTemporalCoverage"
+        test_status = False
+        test_defined = False
+
+        return test_status
+
+    def testEPSG(self):
+        print("testing EPSG validity")
+        agnostic_test_name = "testEPSGDefinition"
+        test_status = False
+        test_defined = False
+
+        return test_status
+
     # Overwrite the method to print the overarching metric
     # for debugging purposes
     # ToDo: remove this method, when the debugging is done
@@ -121,11 +139,13 @@ class FAIREvaluatorGeospatial(FAIREvaluator):
 
         # set overarching metric
         self.set_metric(["FsF-I3-01M"])
-        if self.testGeospatialServiceCategory():
-            geospatial_status = "pass"
-        if self.testGeospatialServiceProtocol():
-            geospatial_status = "pass"
-        if self.testGeospatialServiceType():
+        # if self.testGeospatialServiceCategory():
+        #     geospatial_status = "pass"
+        # if self.testGeospatialServiceProtocol():
+        #     geospatial_status = "pass"
+        # if self.testGeospatialServiceType():
+        #     geospatial_status = "pass"
+        if self.testTemporalCoverage():
             geospatial_status = "pass"
 
         # set overarching metric

@@ -48,7 +48,7 @@ req_dict_bad = {
 } 
 
 # Store one file per pid for later report creation
-req = requests.post(fuji_api_url, json=req_dict_bad, headers=headers)
+req = requests.post(fuji_api_url, json=req_dict, headers=headers)
 
 rs_json = req.json()
 print(rs_json)
