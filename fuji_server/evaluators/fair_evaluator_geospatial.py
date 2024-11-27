@@ -138,3 +138,26 @@ class FAIREvaluatorGeospatial(FAIREvaluator):
         self.result.metric_tests = self.metric_tests
         self.result.score = self.score
         self.result.maturity = self.maturity
+
+    def extract_epsg_code(url):
+        # Split the URL using '/' as the delimiter and get the last part
+        epsg_code = url.split("/")[-1]
+        return epsg_code
+
+    def check_epsg_in_register(epsg_code):
+        # Define the URL for the EPSG CRS register with the EPSG code
+        url = f"https://www.opengis.net/def/crs/EPSG/0/{epsg_code}"
+
+        try:
+            # Send a GET request to the URL
+            response = requests.get(url)
+
+            # If the response status code is 200, the EPSG code exists in the register
+            if response.status_code == 200:
+                return True
+            else:
+                return False
+        except requests.RequestException as e:
+            # Handle errors in case of a failed request
+            print(f"An error occurred: {e}")
+            return False
