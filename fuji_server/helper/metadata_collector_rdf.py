@@ -1432,6 +1432,7 @@ class MetaDataCollectorRdf(MetaDataCollector):
         dct:temporal
         dcat:theme
         """
+
         geodcat_metadata = dict()
         DCT = Namespace("http://purl.org/dc/terms/")
         DCAT = Namespace("http://www.w3.org/ns/dcat#")
@@ -1520,9 +1521,9 @@ class MetaDataCollectorRdf(MetaDataCollector):
         GEODCAT = Namespace("http://data.europa.eu/930/")
         # Define the mapping of properties to their respective resolution crs attributes
         reference_types = {
-            "reference_system": GEODCAT.referenceSystem,
+            "geodcat_reference_system": GEODCAT.referenceSystem,
             # in KlimaKonform test data is crs referenced with DCT and not GEODCAT namespace
-            "coordinate_reference_system": DCT.conformsTo,
+            "dct_reference_system": DCT.conformsTo,
         }
 
         # Create a dictionary with reference system attributes as keys and their values if they exist
