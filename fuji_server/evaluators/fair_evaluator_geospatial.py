@@ -140,11 +140,27 @@ class FAIREvaluatorGeospatial(FAIREvaluator):
         self.result.maturity = self.maturity
 
     def extract_epsg_code(url):
+        """value of geodcat key reference system
+
+        Args:
+            url (str): url of epsg
+
+        Returns:
+            int: get only the epsg code from url
+        """
         # Split the URL using '/' as the delimiter and get the last part
         epsg_code = url.split("/")[-1]
         return epsg_code
 
     def check_epsg_in_register(epsg_code):
+        """https://www.opengis.net/def/crs/EPSG/0/
+
+        Args:
+            epsg_code (int): epsg code
+
+        Returns:
+            boolean:
+        """
         # Define the URL for the EPSG CRS register with the EPSG code
         url = f"https://www.opengis.net/def/crs/EPSG/0/{epsg_code}"
 
