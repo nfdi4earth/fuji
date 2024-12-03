@@ -64,7 +64,14 @@ class MetaDataCollectorRdf(MetaDataCollector):
     SCHEMA_ORG_CONTEXT = Preprocessor.get_schema_org_context()
     SCHEMA_ORG_CREATIVEWORKS = Preprocessor.get_schema_org_creativeworks()
 
-    def __init__(self, loggerinst, target_url=None, source=None, json_ld_content=None, pref_mime_type=None):
+    def __init__(
+        self,
+        loggerinst,
+        target_url=None,
+        source=None,
+        json_ld_content=None,
+        pref_mime_type=None,
+    ):
         """
         Parameters
         ----------
@@ -83,7 +90,9 @@ class MetaDataCollectorRdf(MetaDataCollector):
         self.resolved_url = target_url
         self.content_type = None
         self.source_name = source
-        self.main_entity_format = str(RDF)  # the main enties format e.g. dcat:Dataset => DCAT etc..
+        self.main_entity_format = str(
+            RDF
+        )  # the main enties format e.g. dcat:Dataset => DCAT etc..
         self.metadata_format = MetadataFormats.RDF
         if self.source_name == MetadataSources.RDFA_EMBEDDED:
             self.metadata_format = MetadataFormats.RDFA
@@ -1097,6 +1106,11 @@ class MetaDataCollectorRdf(MetaDataCollector):
                 ):
                     print(
                         "FsF-F2-01M : Trying to retrieve DCAT distributions from remote location -:" + str(dist)
+=======
+                    self.logger.info(
+                        "FsF-F2-01M : Trying to retrieve DCAT distributions from remote location -:"
+                        + str(dist)
+>>>>>>> geodcat_epsg
                     )
                     try:
                         distgraph = rdflib.Graph()
@@ -1230,6 +1244,8 @@ class MetaDataCollectorRdf(MetaDataCollector):
         datasets = list(graph[: RDF.type : DCAT.Dataset])
         if datasets:
             # Spatial coverage
+            # I think this might not work
+            # it just creates an empty list in coverage_spatial
             spatial_coverages = graph.objects(datasets[0], DCT.spatial)
             geodcat_metadata['coverage_spatial'] = []
             for spatial in spatial_coverages:
@@ -1265,7 +1281,6 @@ class MetaDataCollectorRdf(MetaDataCollector):
             for temporal in temporal_coverages:
                 for subj, pred, obj in graph.triples((temporal, None, None)):
                     print(f"  - {subj} {pred} {obj}")
-                print("next temporal!!")
                 for pot in graph.objects(temporal, DCT.PeriodOfTime):
                     print("a pot")
                     temporal_info = {}
@@ -1280,6 +1295,18 @@ class MetaDataCollectorRdf(MetaDataCollector):
             print(geodcat_metadata['coverage_temporal'])
             # Temporal resolution
             geodcat_metadata['resolution_temporal'] = graph.value(datasets[0], DCAT.temporal_resolution)
+
+            # Get reference system
+            reference_system_dict = self.get_reference_system_dict(graph, datasets[0])
+            # print(f"reference_system_dict: {reference_system_dict}")
+            # if reference_system_dict:
+            #     for reference_type, value in reference_system_dict.items():
+            #         reference_system = {reference_type: value}
+
+            if spatial_info:
+                geodcat_metadata["coverage_spatial"].append(spatial_info)
+                geodcat_metadata["resolution_spatial"] = spatial_res
+                geodcat_metadata["reference_system"] = reference_system_dict
 
         print(f"Fetched GEODCAT METATDATA: {geodcat_metadata}")
         return geodcat_metadata
@@ -1310,3 +1337,24 @@ class MetaDataCollectorRdf(MetaDataCollector):
             a string of content type
         """
         return self.content_type
+
+    def get_reference_system_dict(self, graph, dataset):
+        DCT = Namespace("http://purl.org/dc/terms/")
+        GEODCAT = Namespace("http://data.europa.eu/930/")
+        # Define the mapping of properties to their respective resolution crs attributes
+        reference_types = {
+            "geodcat_reference_system": GEODCAT.referenceSystem,
+            # in KlimaKonform test data is crs referenced with DCT and not GEODCAT namespace
+            "dct_reference_system": DCT.conformsTo,
+        }
+
+        # Create a dictionary with reference system attributes as keys and their values if they exist
+        reference_system = {
+            key: graph.value(dataset, prop)
+            for key, prop in reference_types.items()
+            if graph.value(dataset, prop) is not None
+        }
+
+        print(f"reference system in getter: {reference_system}")
+
+        return reference_system
