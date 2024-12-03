@@ -1104,13 +1104,9 @@ class MetaDataCollectorRdf(MetaDataCollector):
                     or graph.value(dist, DCAT.downloadURL)
                     or graph.value(dist, DCAT.accessService)
                 ):
-                    print(
-                        "FsF-F2-01M : Trying to retrieve DCAT distributions from remote location -:" + str(dist)
-=======
                     self.logger.info(
                         "FsF-F2-01M : Trying to retrieve DCAT distributions from remote location -:"
                         + str(dist)
->>>>>>> geodcat_epsg
                     )
                     try:
                         distgraph = rdflib.Graph()
