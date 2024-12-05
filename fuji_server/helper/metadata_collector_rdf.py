@@ -284,7 +284,7 @@ class MetaDataCollectorRdf(MetaDataCollector):
                     if isinstance(rdf_response, str) and rdf_response not in ["null", "None"]:
                         # url escape malformed (spaces) URIs
                         try:
-                            suris = re.findall('"http[s]?:\/\/(.*?)"', rdf_response)
+                            suris = re.findall(r'"http[s]?:\/\/(.*?)"', rdf_response)
                             for suri in suris:
                                 if " " in suri:
                                     rsuri = urllib.parse.quote(suri)
@@ -1199,6 +1199,7 @@ class MetaDataCollectorRdf(MetaDataCollector):
         """
 
         return True
+    
     def get_geodcat_metadata(self, graph):
         """
         Get the GeoDCAT-AP metadata given RDF graph.
@@ -1231,6 +1232,7 @@ class MetaDataCollectorRdf(MetaDataCollector):
         DCT = Namespace("http://purl.org/dc/terms/")
         DCAT = Namespace("http://www.w3.org/ns/dcat#")
         GEODCAT = Namespace("http://data.europa.eu/930/")
+        SCHEMA = Namespace("http://schema.org/")
         LOCN = Namespace("http://www.w3.org/ns/locn#")
 
         self.logger.info(
@@ -1238,14 +1240,15 @@ class MetaDataCollectorRdf(MetaDataCollector):
             )
 
         datasets = list(graph[: RDF.type : DCAT.Dataset])
+
         if datasets:
             # Spatial coverage
-            # I think this might not work
-            # it just creates an empty list in coverage_spatial
             spatial_coverages = graph.objects(datasets[0], DCT.spatial)
             geodcat_metadata['coverage_spatial'] = []
+
+            spatial_info = {}
             for spatial in spatial_coverages:
-                spatial_info = {}
+
                 geometry = None
                 # Use GeoDCAT-AP to get spatial coverage
                 location = graph.value(spatial, LOCN.geometry)
@@ -1264,31 +1267,29 @@ class MetaDataCollectorRdf(MetaDataCollector):
             if resolutions_dict:
                 for resolution_type, value in resolutions_dict.items():
                     spatial_res = {resolution_type: value}
-
-            # TODO: Bug, spatial_info is not defined if loop does not run through at least once            
-            if spatial_info:
-                geodcat_metadata['coverage_spatial'].append(spatial_info)
-                geodcat_metadata['resolution_spatial'] = spatial_res
             
             # Temporal coverage
             temporal_coverages = graph.objects(datasets[0], DCT.temporal)
+            print(f"Temporal objects: {temporal_coverages}")
             geodcat_metadata['coverage_temporal'] = []
+
+            for temporal_coverage in temporal_coverages:
+                # Extract startDate and endDate 
             
-            for temporal in temporal_coverages:
-                for subj, pred, obj in graph.triples((temporal, None, None)):
-                    print(f"  - {subj} {pred} {obj}")
-                for pot in graph.objects(temporal, DCT.PeriodOfTime):
-                    print("a pot")
-                    temporal_info = {}
-                    startDate = graph.value(pot, DCAT.startDate)
-                    endDate = graph.value(pot, DCAT.endDate)
+                start_dates = list(graph.objects(temporal_coverage, SCHEMA.startDate))
+                end_dates = list(graph.objects(temporal_coverage, SCHEMA.endDate))
+                
+                # Extract the first date if available (assumes one start and one end date per coverage)
+                start_date = str(start_dates[0]) if start_dates else None
+                end_date = str(end_dates[0]) if end_dates else None
+                
+                # Store the result in a dictionary or tuple
+                if start_date and end_date:
+                    geodcat_metadata['coverage_temporal'].append({"startDate": start_date, "endDate": end_date})
 
-                    temporal_info['startDate'] = startDate
-                    temporal_info['endDate'] = endDate
+                    # We assume that only one time period per dataset => stop loop if found any 
+                    break
 
-                    if temporal_info:
-                        geodcat_metadata['coverage_temporal'].append(temporal_info)
-            print(geodcat_metadata['coverage_temporal'])
             # Temporal resolution
             geodcat_metadata['resolution_temporal'] = graph.value(datasets[0], DCAT.temporal_resolution)
 
@@ -1305,7 +1306,7 @@ class MetaDataCollectorRdf(MetaDataCollector):
                 geodcat_metadata["reference_system"] = reference_system_dict
 
         print(f"Fetched GEODCAT METATDATA: {geodcat_metadata}")
-        return geodcat_metadata
+        return geodcat_metadata  
     
     def get_spatial_resolutions_dict(self, graph, dataset):
         DCAT = Namespace("http://www.w3.org/ns/dcat#") 
